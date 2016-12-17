@@ -132,11 +132,10 @@ cServerDC::cServerDC(string CfgBase, const string &ExecPath):
 			mCo->mRedirects->mOldMap[i][j] = char(int(mCo->mRedirects->mOldMap[i][j]) - j - i);
 	}
 
-	for (i = 0; i <= USER_ZONES; i++)
+	for (i = 0; i <= USER_ZONES; i++) {
 		mUserCount[i] = 0;
-
-	for (i = 0; i <= USER_ZONES; i++)
 		mUploadZone[i].SetPeriod(60.);
+	}	
 
 	mDownloadZone.SetPeriod(60.);
 	SetClassName("cServerDC");
