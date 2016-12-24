@@ -41,6 +41,7 @@
 #include "casyncconn.h"
 #include "cprotocol.h"
 #if !defined _WIN32
+	#include <ifaddrs.h>
 	#include <arpa/inet.h>
 	#include <netinet/in.h>        /* for sockaddr_in */
 	#include <sys/socket.h>        /* for AF_INET */
@@ -75,7 +76,7 @@ namespace nVerliHub {
 char *cAsyncConn::msBuffer = new char[MAX_MESS_SIZE + 1];
 unsigned long cAsyncConn::sSocketCounter = 0;
 
-cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct):
+cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct,bool tIPv6):
 	cObj("cAsyncConn"),
 	mZlibFlag(false),
 	// mIterator(0),
@@ -89,38 +90,73 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct):
 	mpMsgParser(NULL),
 	mAddrPort(0),
 	mServPort(0),
-	mType(ct)
+	mType(ct),
+	mIPv6(tIPv6)
 {
 	mMaxBuffer = MAX_SEND_SIZE;
 	struct sockaddr saddr;
-	struct sockaddr_in *addr_in;
 	socklen_t addr_size;
 	addr_size = sizeof(saddr);
-	mIp = 0;
 	ClearLine();
 	mBufEnd = mBufReadPos = 0;
 
 	if (mSockDesc) {
-		if (0 > getpeername(mSockDesc, &saddr, &addr_size)) {
+		if (getpeername(mSockDesc, &saddr, &addr_size) == -1) {
 			if (Log(2))
 				LogStream() << "Error getting peer name, closing" << endl;
 
 			CloseNow();
 		}
+		
+		
 
-		addr_in = (struct sockaddr_in *)&saddr;
-		mIp = addr_in->sin_addr.s_addr; // copy ip
-		mAddrIP = inet_ntoa(addr_in->sin_addr); // ip address
+		//IP addr
+		struct ifaddrs *ifaddr= NULL,*ifa = NULL;
+		void *tmp = NULL;
+		
+		getifaddrs(&ifaddr);
+		for(ifa = ifaddr;ifa!= NULL;ifa = ifa->ifa_next)
+		{
+			if(!ifa->ifa_addr)
+				continue;
+				
+			if(ifa->ifa_addr->sa_family = AF_INET)
+			{
+				tmp = &((struct sockaddr_in*)ifa->ifa_addr)->sin_addr;
+				char address[INET_ADDRSTRLEN];
+				inet_ntop(AF_INET,tmp,address, INET_ADDRSTRLEN);
+				mAddrIP = address;
+			}
+			else if(ifa->ifa_addr->sa_family = AF_INET6)
+			{
+				tmp = &((struct sockaddr_in6*)ifa->ifa_addr)->sin6_addr;
+				char address[INET_ADDRSTRLEN];
+				inet_ntop(AF_INET6,tmp,address, INET_ADDRSTRLEN);
+				mAddrIP6 = address;
+			}	
+			
+		}
+		
 
+		
 		if(mxServer && mxServer->mUseDNS) // host name
 			DNSLookup();
 
-		mAddrPort = ntohs(addr_in->sin_port); // port number
+		mAddrPort = ntohs(((sockaddr_in*)&saddr)->sin_port); // port number
 
 		if (getsockname(mSockDesc, &saddr, &addr_size) == 0) { // get server address and port that user is connected to
-			addr_in = (struct sockaddr_in *)&saddr;
-			mServAddr = inet_ntoa(addr_in->sin_addr);
-			mServPort = ntohs(addr_in->sin_port);
+			
+			char *mTmp = new char[INET6_ADDRSTRLEN+1];
+			inet_ntop(mIPv6 ? AF_UNSPEC : AF_INET,&((struct sockaddr_in*)&saddr)->sin_addr,mTmp,sizeof(mTmp));
+			if(mTmp) {
+				mServAddr = strdup(mTmp);
+				free(mTmp);
+				LogStream() << "freeing tmp of mServAddrs" << endl;
+			}
+			
+			mServPort =  ntohs(((sockaddr_in*)&saddr)->sin_port);
+			
+			
 		} else if (Log(2)) {
 			LogStream() << "Error getting socket name" << endl;
 		}
@@ -411,7 +447,7 @@ int cAsyncConn::SetupUDP(const string &host, int port)
 	struct hostent *he = gethostbyname(host.c_str());
 	if(he != NULL) {
 		memset(&mAddrIN, 0, sizeof(struct sockaddr_in));
-		mAddrIN.sin_family = AF_INET;
+		mAddrIN.sin_family = GetIsIpv6() ? AF_UNSPEC : AF_INET;
 		mAddrIN.sin_port = htons(port);
 		mAddrIN.sin_addr = *((struct in_addr *)he->h_addr);
 		memset(&(mAddrIN.sin_zero), '\0', 8);
@@ -453,7 +489,7 @@ int cAsyncConn::Connect(const string &host, int port)
 
 	struct hostent *he = gethostbyname(host.c_str());
 	if(he != NULL) {
-		dest_addr.sin_family = AF_INET;
+		dest_addr.sin_family = GetIsIpv6() ? AF_UNSPEC : AF_INET;
 		dest_addr.sin_port = htons(port);
 		dest_addr.sin_addr.s_addr = *(unsigned*)(he->h_addr_list[0]);//inet_addr(host.c_str());
 		memset(&(dest_addr.sin_zero), '\0', 8);
@@ -492,14 +528,14 @@ int cAsyncConn::GetSockOpt(int optname, void *optval, int &optlen)
 	return result;
 }
 
-tSocket cAsyncConn::CreateSock(bool udp)
+tSocket cAsyncConn::CreateSock(bool udp,bool ipv6)
 {
 	tSocket sock;
 	sockoptval_t yes = 1;
 
 	if(!udp) {
 		/* Create tcp socket */
-		if((sock = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+		if((sock = socket(ipv6 ? AF_UNSPEC : AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
 			return INVALID_SOCKET;
 
 		/* Fix the address already in use error */
@@ -509,37 +545,60 @@ tSocket cAsyncConn::CreateSock(bool udp)
 		}
 	} else {
 		/* Create udp socket */
-		if((sock = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET)
+		if((sock = socket(ipv6 ? AF_UNSPEC : AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET)
 			return INVALID_SOCKET;
 	}
 
-	sSocketCounter ++;
+	sSocketCounter++;
 	if(Log(3))
 		LogStream() << "New socket " << sock << endl;
 
 	return sock;
 }
 
-int cAsyncConn::BindSocket(int sock, int port, const char *ia)
+int cAsyncConn::BindSocket(int sock, int port,  char *ia,int type)
 {
-	if(sock < 0)
-		return -1;
-	memset(&mAddrIN, 0, sizeof(struct sockaddr_in));
-	mAddrIN.sin_family = AF_INET;
+	if(!sock)
+		return INVALID_SOCKET;
+	int status;
+	struct addrinfo *serverinfo,hints;
+	memset(&hints,0,sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = type;
+	hints.ai_flags = AI_PASSIVE;
+	char buf[32];
+	sprintf(buf,"%d",port);
+	if((status = getaddrinfo(NULL,buf,&hints,&serverinfo)) != 0){
+		//error
+		LogStream() << "Error while get info for bind" << status;
+	}	
+	/*
+	
 	mAddrIN.sin_addr.s_addr = INADDR_ANY; // default listen address
-	if(ia)
+	mAddrIN.ai_flags = AI_PASSIVE || AI_ADDRCONFIG;
+	
+	
+/*	if(ia)
 #if !defined _WIN32
-		inet_aton(ia, &mAddrIN.sin_addr); // override it
+		//inet_aton(ia, &mAddrIN.sin_addr); // override it
+		//char *tmp = new char[INET6_ADDRSTRLEN+1];
+		//inet_ntop(GetIsIpv6() ? AF_INET6: AF_INET,&((struct sockaddr_in*)&mAddrIN)->sin_addr,ia,sizeof(ia));
+		//if(ia) {
+			//if (Log(2))
+			//LogStream() << "freeing tmp of mAddrsIP" << endl;
+			//mAddrIP = strdup(tmp);
+			//free(tmp);
+		//}
 #else
 		mAddrIN.sin_addr.s_addr = inet_addr(ia);
-#endif
-	mAddrIN.sin_port = htons(port);
-	memset(&(mAddrIN.sin_zero), '\0', 8);
+#endif*/
+	
+
 
 
 	/* Bind socket to port */
-	if(bind(sock, (struct sockaddr *)&mAddrIN, sizeof(mAddrIN)) == -1) {
-		return -1;
+	if(bind(sock, (const sockaddr*)&serverinfo, sizeof(serverinfo)) == -1) {
+		return INVALID_SOCKET;
 	}
 	return sock;
 }
@@ -573,18 +632,18 @@ tSocket cAsyncConn::NonBlockSock(int sock)
 	return sock;
 }
 
-int cAsyncConn::ListenOnPort(int port, const char *address, bool udp)
+bool cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv6)
 {
-	if(mSockDesc)
-		return -1;
-	mSockDesc = CreateSock(udp);
-	mSockDesc = BindSocket(mSockDesc,port,address);
+	if(!mSockDesc)
+		return INVALID_SOCKET;
+	mSockDesc = CreateSock(udp,ipv6);
+	mSockDesc = BindSocket(mSockDesc,port,address,udp ? SOCK_DGRAM : SOCK_STREAM);
 	if(!udp) {
 	    mSockDesc = ListenSock(mSockDesc);
 	    mSockDesc = NonBlockSock(mSockDesc);
 	}
-	ok = mSockDesc > 0;
-	return mSockDesc;
+	ok = mSockDesc != INVALID_SOCKET;
+	return ok;
 }
 
 tSocket cAsyncConn::AcceptSock()
@@ -887,10 +946,13 @@ string * cAsyncConn::FactoryString()
 
 bool cAsyncConn::DNSLookup()
 {
-	struct hostent *hp;
-	if(mAddrHost.size())
+	if(mAddrHost.empty())
 	    	return true;
-	if((hp=gethostbyaddr((char *)&mIp,sizeof(mIp),AF_INET)))
+	struct hostent *hp;
+	unsigned int addr;
+	addr = inet_addr(mAddrIP.c_str());
+	
+	if((hp=gethostbyaddr((char *)&addr,sizeof(addr),AF_UNSPEC)))
 		mAddrHost = hp->h_name;
 	return (hp != NULL);
 }
@@ -916,7 +978,7 @@ bool cAsyncConn::DNSResolveReverse(const string &ip, string &host)
 #else
 	addr.s_addr = inet_addr(ip.c_str());
 #endif
-	if((hp = gethostbyaddr((char *)&addr,sizeof(addr),AF_INET)))
+	if((hp = gethostbyaddr((char *)&addr,sizeof(addr),AF_UNSPEC)))
 		host=hp->h_name;
 	return hp != NULL;
 }
@@ -925,8 +987,8 @@ string cAsyncConn::IPAsString(unsigned long addr)
 {
 	struct in_addr in;
 	in.s_addr = addr;
-	char ip[INET_ADDRSTRLEN];
-	inet_ntop(AF_INET, (const void*) &in, ip, INET_ADDRSTRLEN);
+	char ip[INET_ADDRSTRLEN+1];
+	inet_ntop(AF_UNSPEC, (const void*) &in, ip, INET_ADDRSTRLEN);
 	return string(ip);
 }
 

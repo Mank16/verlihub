@@ -41,6 +41,7 @@ namespace nVerliHub {
 cAsyncSocketServer::cAsyncSocketServer(int port):
 	cObj("cAsyncSocketServer"),
 	mAddr("0.0.0.0"),
+	mAddr6("::"),
 	mPort(port),
 	timer_conn_period(4),
 	timer_serv_period(1),
@@ -278,7 +279,7 @@ void cAsyncSocketServer::OnNewMessage(cAsyncConn *, string *str)
 
 string * cAsyncSocketServer::FactoryString(cAsyncConn *)
 {
-	return new string;
+	return new string();
 }
 
 void cAsyncSocketServer::OnConnClose(cAsyncConn* conn)
@@ -384,21 +385,30 @@ void cAsyncSocketServer::TimeStep()
 	}
 }
 
-cAsyncConn * cAsyncSocketServer::Listen(int OnPort, bool UDP)
+pair<cAsyncConn *,cAsyncConn*> cAsyncSocketServer::Listen(int OnPort, bool UDP)
 {
 	cAsyncConn *ListenSock;
+	cAsyncConn* ListenSock6;
 
-	if(!UDP)
+	if(!UDP) {
 		ListenSock = new cAsyncConn(0, this, eCT_LISTEN);
-	else
-		ListenSock = new cAsyncConn(0, this, eCT_CLIENTUDP);
-
-	if(this->ListenWithConn(ListenSock, OnPort, UDP) != NULL) {
-		return ListenSock;
+		ListenSock6 = new cAsyncConn(0, this, eCT_LISTEN, true);
+		
 	} else {
-		delete ListenSock;
-		return NULL;
+		ListenSock = new cAsyncConn(0, this, eCT_CLIENTUDP);
+		ListenSock6 = new cAsyncConn(0, this, eCT_CLIENTUDP, true);
 	}
+	
+	if(this->ListenWithConn(ListenSock, OnPort, UDP) != NULL )
+		LogStream() << "Error with IPv4";
+	if(this->ListenWithConn(ListenSock6, OnPort, UDP,true) != NULL)
+		LogStream() << "Error with IPv6";
+	
+	return make_pair(ListenSock,ListenSock6);
+	/*} else {
+		delete ListenSock;
+		delete ListenSock6;
+	}*/
 }
 
 
@@ -408,21 +418,26 @@ int cAsyncSocketServer::StartListening(int OverrideDefaultPort)
 		mPort = OverrideDefaultPort;
 	if(mPort && !OverrideDefaultPort)
 		OverrideDefaultPort = mPort;
-	if(this->Listen(OverrideDefaultPort, false) != NULL)
+	pair<cAsyncConn*, cAsyncConn*> mIsOk = this->Listen(OverrideDefaultPort, false);
+	
+	if(mIsOk.first != NULL || mIsOk.second != NULL)
 		return 0;
 	return -1;
 }
 
-cAsyncConn * cAsyncSocketServer::ListenWithConn(cAsyncConn *ListenSock, int OnPort, bool UDP)
+cAsyncConn * cAsyncSocketServer::ListenWithConn(cAsyncConn *ListenSock, int OnPort, bool UDP, bool ipv6)
 {
 	if(ListenSock != NULL) {
-		if(ListenSock->ListenOnPort(OnPort,mAddr.c_str(), UDP)< 0) {
+		if(ListenSock->ListenOnPort(OnPort, ipv6 ? (const_cast<char*>(mAddr6.c_str())) : (const_cast<char*>(mAddr.c_str())), UDP,ipv6)) {
 			if(Log(0)) {
-				LogStream() << "Cannot listen on " << mAddr << ":" << OnPort << (UDP ? " UDP":" TCP") << endl;
+				if(!ipv6)
+					LogStream() << "Cannot listen on " << mAddr << ":" << OnPort << (UDP ? " UDP":" TCP") << endl;
+				if(ipv6)
+					LogStream() << "Cannot listen on [" << mAddr6 << "]:" << OnPort << (UDP ? " UDP":" TCP") << endl;
+				
 				LogStream() << "Please make sure the port is open and not already used by another process" << endl;
 			}
 			throw "Can't listen";
-			return NULL;
 		}
 		this->mConnChooser.AddConn(ListenSock);
 		this->mConnChooser.cConnChoose::OptIn(

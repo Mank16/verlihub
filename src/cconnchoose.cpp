@@ -73,13 +73,14 @@ bool cConnChoose::AddConn(cConnBase *conn)
 	if ( conn == NULL ) return false;
 	tSocket sock = (tSocket)(*conn);
 	// resize
-	if ( (tSocket)mConnList.size() <= sock ) mConnList.resize(sock+sock/4, NULL);
+	//if ( (tSocket)mConnList.size() <= sock ) mConnList.resize(sock+sock/4, NULL);
 	// don't add twice
- 	if ( mConnList[sock] != NULL ) return false;
+ 	//if ( mConnList[sock] != NULL ) return false;
 
 	if (sock > mLastSock) mLastSock = sock;
 
-	mConnList[sock] = conn;
+	mConnList.push_back(conn);
+	//mConnList[sock] = conn;
 	return true;
 }
 

@@ -146,7 +146,7 @@ namespace nVerliHub {
 				 * @param ct The type of connection. See tConnType for more information.
 				 * @see tConnType
 				 */
-				cAsyncConn(int sd=0, cAsyncSocketServer *s=NULL, tConnType ct= nEnums::eCT_CLIENT);
+				cAsyncConn(int sd=0, cAsyncSocketServer *s=NULL, tConnType ct= nEnums::eCT_CLIENT,bool mIPv6 = false);
 
 				/**
 				 * Class constructor.
@@ -205,6 +205,9 @@ namespace nVerliHub {
 				{
 					return mServAddr;
 				}
+				
+				const bool GetIsIpv6()
+				{return mIPv6;}
 
 				/**
 				 * Return if the buffer that contains stock data is empty.
@@ -370,7 +373,7 @@ namespace nVerliHub {
 				 * @param udp True if it is an UDP connection.
 				 * @return The socket descriptor or -1 if the connection already exists.
 				 */
-				int ListenOnPort(int port, const char *ia=NULL, bool udp=false);
+				bool ListenOnPort(unsigned int port, char *ia=NULL, bool udp=false,bool ipv6 = false);
 
 				/**
 				 * Event handler function called when write buffer gets empty.
@@ -525,9 +528,10 @@ namespace nVerliHub {
 
 				/// IP address of the connection.
 				string mAddrIP;
+				string mAddrIP6;
 
 				/// Integer that represents the numeric value of the IP address of the connection.
-				unsigned long mIp;
+				//unsigned long mIp;
 
 				/// Port of the connection.
 				unsigned int mAddrPort;
@@ -535,6 +539,8 @@ namespace nVerliHub {
 				// server address and port that user is connected to
 				string mServAddr;
 				unsigned int mServPort;
+				//if IPv6 conn
+				bool mIPv6;
 
 				/// The maximum size of the buffer that contains stock data.
 				/// @see msBuffer
@@ -564,14 +570,14 @@ namespace nVerliHub {
 				 * @param port The port.
 				 * @param add The address.
 				 */
-				int BindSocket(int sock, int port, const char *addr=NULL);
+				int BindSocket(int sock, int port, char *addr=NULL, int type = 0);
 
 				/**
 				 * Create a new socket connection.
 				 * @param udp True if the connection is UDP one. Default to TCP.
 				 * @return A negative value indicates that the connection is not created.
 				 */
-				tSocket CreateSock(bool udp=false);
+				tSocket CreateSock(bool udp=false,bool ipv6=false);
 
 				/**
 				 * Return a pointer to an instance of connection factory

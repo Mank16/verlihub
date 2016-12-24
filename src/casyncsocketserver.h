@@ -88,7 +88,7 @@ namespace nVerliHub {
 				 * @return The new connection.
 				 * @see ListenWithConn()
 				 */
-				virtual cAsyncConn * Listen(int OnPort, bool UDP = false);
+				virtual pair<cAsyncConn *,cAsyncConn*> Listen(int OnPort, bool UDP = false);
 
 				/**
 				 * Handle the given connection and listen on the given port.
@@ -97,7 +97,7 @@ namespace nVerliHub {
 				 * @param UDP True if it is an UDP connection.
 				 * @return The new connection.
 				 */
-				virtual cAsyncConn * ListenWithConn(cAsyncConn *connection, int OnPort, bool UDP=false);
+				virtual cAsyncConn * ListenWithConn(cAsyncConn *connection, int OnPort, bool UDP=false,bool ipv6=false);
 
 				/**
 				* This event is triggered when a connection is closed.
@@ -171,6 +171,7 @@ namespace nVerliHub {
 
 				/// The address to listen on
 				string mAddr;
+				string mAddr6;
 
 				/// The port to listen on
 				unsigned int mPort;
