@@ -120,14 +120,14 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct,bool tIPv6)
 			if(!ifa->ifa_addr)
 				continue;
 				
-			if(ifa->ifa_addr->sa_family = AF_INET)
+			if(ifa->ifa_addr->sa_family == AF_INET)
 			{
 				tmp = &((struct sockaddr_in*)ifa->ifa_addr)->sin_addr;
 				char address[INET_ADDRSTRLEN];
 				inet_ntop(AF_INET,tmp,address, INET_ADDRSTRLEN);
 				mAddrIP = address;
 			}
-			else if(ifa->ifa_addr->sa_family = AF_INET6)
+			else if(ifa->ifa_addr->sa_family == AF_INET6)
 			{
 				tmp = &((struct sockaddr_in6*)ifa->ifa_addr)->sin6_addr;
 				char address[INET_ADDRSTRLEN];
@@ -173,11 +173,11 @@ cAsyncConn::cAsyncConn(const string &host, int port, bool udp):
 	ok(false),
 	mWritable(true),
 
-	#if !defined _WIN32
-		mSockDesc(-1),
-	#else
-		mSockDesc(0),
-	#endif
+//	#if !defined _WIN32
+		mSockDesc(INVALID_SOCKET),
+//	#else
+//		mSockDesc(0),
+//	#endif
 
 	mxServer(NULL),
 	mxMyFactory(NULL),
@@ -535,7 +535,7 @@ tSocket cAsyncConn::CreateSock(bool udp,bool ipv6)
 
 	if(!udp) {
 		/* Create tcp socket */
-		if((sock = socket(ipv6 ? AF_UNSPEC : AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+		if((sock = socket(ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
 			return INVALID_SOCKET;
 
 		/* Fix the address already in use error */
@@ -545,7 +545,7 @@ tSocket cAsyncConn::CreateSock(bool udp,bool ipv6)
 		}
 	} else {
 		/* Create udp socket */
-		if((sock = socket(ipv6 ? AF_UNSPEC : AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET)
+		if((sock = socket(ipv6 ? AF_INET6 : AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET)
 			return INVALID_SOCKET;
 	}
 
@@ -556,51 +556,70 @@ tSocket cAsyncConn::CreateSock(bool udp,bool ipv6)
 	return sock;
 }
 
-int cAsyncConn::BindSocket(int sock, int port,  char *ia,int type)
+int cAsyncConn::BindSocket(int sockfd, int port,  char *addr,int type)
 {
-	if(!sock)
-		return INVALID_SOCKET;
-	int status;
-	struct addrinfo *serverinfo,hints;
-	memset(&hints,0,sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = type;
-	hints.ai_flags = AI_PASSIVE;
-	char buf[32];
-	sprintf(buf,"%d",port);
-	if((status = getaddrinfo(NULL,buf,&hints,&serverinfo)) != 0){
-		//error
-		LogStream() << "Error while get info for bind" << status;
-	}	
-	/*
-	
-	mAddrIN.sin_addr.s_addr = INADDR_ANY; // default listen address
-	mAddrIN.ai_flags = AI_PASSIVE || AI_ADDRCONFIG;
-	
-	
-/*	if(ia)
-#if !defined _WIN32
-		//inet_aton(ia, &mAddrIN.sin_addr); // override it
-		//char *tmp = new char[INET6_ADDRSTRLEN+1];
-		//inet_ntop(GetIsIpv6() ? AF_INET6: AF_INET,&((struct sockaddr_in*)&mAddrIN)->sin_addr,ia,sizeof(ia));
-		//if(ia) {
-			//if (Log(2))
-			//LogStream() << "freeing tmp of mAddrsIP" << endl;
-			//mAddrIP = strdup(tmp);
-			//free(tmp);
-		//}
-#else
-		mAddrIN.sin_addr.s_addr = inet_addr(ia);
-#endif*/
-	
+	if(!sockfd)
+		return -1;
+	struct servent *pse;
+	struct hostent *phe;
+	struct sockaddr_in sin;	
+	struct protoent *ppe;
+	    char *protocol;
+    sin.sin_family=AF_INET;
+    
+    switch(type) {
+
+        case SOCK_DGRAM:
+            protocol= "udp";
+            break;
+        case SOCK_STREAM:
+            protocol= "tcp";
+            break;
+        default:
+            fprintf(stderr, "listen_server:: unknown socket type=[%d]\n", type);
+            return -1;
+    }
 
 
 
-	/* Bind socket to port */
-	if(bind(sock, (const sockaddr*)&serverinfo, sizeof(serverinfo)) == -1) {
-		return INVALID_SOCKET;
-	}
-	return sock;
+	if ( pse = getservbyname(addr, protocol) ) {
+        sin.sin_port = pse->s_port;
+
+    } else if ( (sin.sin_port = htons(port)) ==0) {
+         fprintf(stderr, "listen_server:: could not get service=[%s]\n", port);
+         return -1;
+    }
+
+    if (mServAddr.empty()) {
+        sin.sin_addr.s_addr= INADDR_ANY;
+
+    } else {
+        if (phe = gethostbyname(mServAddr.c_str())) {
+            memcpy(&sin.sin_addr, phe->h_addr, phe->h_length);
+
+        } else if ( (sin.sin_addr.s_addr = inet_addr(mServAddr.c_str())) == INADDR_NONE) {
+             fprintf(stderr, "listen_server:: could not get host=[%s]\n", mServAddr);
+             return -1;
+        }
+    }
+
+    if ((ppe = getprotobyname(protocol)) == 0) {
+         fprintf(stderr, "listen_server:: could not get protocol=[%s]\n", protocol);
+         return -1;
+    }
+     
+    if ((sockfd = socket(PF_INET, type, ppe->p_proto)) < 0) {  
+        fprintf(stderr, "listen_server:: could not open socket\n");
+        return -1;
+    }
+
+    if (bind(sockfd, (struct sockaddr *)&sin, sizeof(sin)) != 0) {
+        fprintf(stderr, "listen_server:: could not bind socket\n");
+        close(sockfd);
+        return -1;
+    }
+
+	return sockfd;
 }
 
 int cAsyncConn::ListenSock(int sock)
@@ -635,7 +654,7 @@ tSocket cAsyncConn::NonBlockSock(int sock)
 bool cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv6)
 {
 	if(!mSockDesc)
-		return INVALID_SOCKET;
+		return true;
 	mSockDesc = CreateSock(udp,ipv6);
 	mSockDesc = BindSocket(mSockDesc,port,address,udp ? SOCK_DGRAM : SOCK_STREAM);
 	if(!udp) {

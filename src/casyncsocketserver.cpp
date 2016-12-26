@@ -399,16 +399,12 @@ pair<cAsyncConn *,cAsyncConn*> cAsyncSocketServer::Listen(int OnPort, bool UDP)
 		ListenSock6 = new cAsyncConn(0, this, eCT_CLIENTUDP, true);
 	}
 	
-	if(this->ListenWithConn(ListenSock, OnPort, UDP) != NULL )
+	if(this->ListenWithConn(ListenSock, OnPort, UDP) == NULL )
 		LogStream() << "Error with IPv4";
-	if(this->ListenWithConn(ListenSock6, OnPort, UDP,true) != NULL)
+	if(this->ListenWithConn(ListenSock6, OnPort, UDP,true) == NULL)
 		LogStream() << "Error with IPv6";
 	
 	return make_pair(ListenSock,ListenSock6);
-	/*} else {
-		delete ListenSock;
-		delete ListenSock6;
-	}*/
 }
 
 
@@ -437,13 +433,14 @@ cAsyncConn * cAsyncSocketServer::ListenWithConn(cAsyncConn *ListenSock, int OnPo
 				
 				LogStream() << "Please make sure the port is open and not already used by another process" << endl;
 			}
-			throw "Can't listen";
 		}
 		this->mConnChooser.AddConn(ListenSock);
 		this->mConnChooser.cConnChoose::OptIn(
 			(cConnBase *)ListenSock,
 			tChEvent(eCC_INPUT|eCC_ERROR));
+			
 		if(Log(0)) LogStream() << "Listening for connections on " << mAddr << ":" << OnPort << (UDP?" UDP":" TCP") << endl;
+		if(Log(0)) LogStream() << "Listening for connections on [" << mAddr6 << "]:" << OnPort << (UDP?" UDP":" TCP") << endl;
 		return ListenSock;
 	}
 	return NULL;
