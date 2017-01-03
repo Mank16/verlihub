@@ -479,6 +479,13 @@ int cDCProto::DC_Supports(cMessageDC *msg, cConnDC *conn)
 			if (!mS->mC.disable_extjson)
 				pars.append("ExtJSON2 ");
 		}
+		
+		else if(feature == "IP64")
+		{
+			conn->mFeatures |= eSF_IP4;
+			pars.append("IP64 ");
+		}
+		
 	}
 
 	#ifndef WITHOUT_PLUGINS

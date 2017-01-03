@@ -135,7 +135,9 @@ namespace nVerliHub {
 			eSF_GETZBLOCK = 1 << 26,
 			eSF_ACTM = 1 << 27,
 			eSF_SALTPASS = 1 << 28,
-			eSF_NICKRULE = 1 << 29
+			eSF_NICKRULE = 1 << 29 ,
+			eSF_IP4 = 1 << 30,
+			
 		} tSupportFeature;
 
 		typedef enum
