@@ -513,6 +513,8 @@ int cDCConsole::CmdMyIp(istringstream &cmd_line, cConnDC *conn)
 	string omsg;
 	os << _("Your IP information") << ":\r\n\r\n";
 	os << " [*] " << _("IP") << ": " << conn->AddrIP().c_str() << "\r\n";
+	if(!conn->AddrIPv6().empty())
+		os << " [*] " << _("IPv6") <<  ": " << conn->AddrIPv6() << "\r\n";
 	os << " [*] " << _("Country") << ": " << conn->mCC.c_str() << "=" << conn->mCN.c_str() << "\r\n";
 	os << " [*] " << _("City") << ": " << conn->mCity.c_str() << "\r\n";
 	omsg = os.str();

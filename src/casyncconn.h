@@ -184,6 +184,10 @@ namespace nVerliHub {
 				{
 					return mAddrIP;
 				}
+				const string& AddrIPv6()
+				{
+					return mAddrIP6;	
+				}	
 
 				/**
 				 * Return the port.

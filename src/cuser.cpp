@@ -247,8 +247,10 @@ void cUser::DisplayInfo(ostream &os, int DisplClass)
 	if (DisplClass >= eUC_CHEEF)
 		os << " [*] " << autosprintf(_("In list: %s"), (this->mInList ? _("Yes") : _("No"))) << "\r\n";
 
-	if (DisplClass >= eUC_OPERATOR)
-		os << " [*] " << autosprintf(_("IP: %s"), this->mxConn->AddrIP().c_str()) << "\r\n";
+	if (DisplClass >= eUC_OPERATOR) {
+		os << " [*] " << autosprintf(_("IP: %s"), (this->mxConn->AddrIP().c_str())) << "\r\n";
+		os << " [*] " << autosprintf(_("IPv6: %s"), (this->mxConn->AddrIPv6().c_str())) << "\r\n";
+	}	
 
 	if ((DisplClass >= eUC_OPERATOR) && this->mxConn->AddrHost().size())
 		os << " [*] " << autosprintf(_("Host: %s"), this->mxConn->AddrHost().c_str()) << "\r\n";
