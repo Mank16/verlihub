@@ -539,7 +539,8 @@ tSocket cAsyncConn::CreateSock(bool udp,bool ipv6)
 			return INVALID_SOCKET;
 
 		/* Fix the address already in use error */
-		if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(sockoptval_t)) == INVALID_SOCKET) {
+		if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &yes, sizeof(yes)) == -1) {
+			perror("set sock err");
 			closesocket(sock);
 			return INVALID_SOCKET;
 		}
@@ -556,6 +557,29 @@ tSocket cAsyncConn::CreateSock(bool udp,bool ipv6)
 	return sock;
 }
 
+int cAsyncConn::BindSocketV6(int sockfd, int port, int type)
+{
+	struct addrinfo hints,*res;
+	
+	memset(&hints,0, sizeof(hints));
+	
+	hints.ai_family = AF_INET6;
+	hints.ai_socktype = type;
+	hints.ai_flags = AI_PASSIVE;
+	char buf[33];
+	sprintf(buf,"%d",port);
+	getaddrinfo(NULL,buf,&hints,&res);
+	
+	int ret = bind(sockfd, res->ai_addr, res->ai_addrlen);
+	if(ret == -1)
+	{
+		perror("bind v6");	
+		close(sockfd);
+		return -1;
+	}
+	return sockfd;
+}
+
 int cAsyncConn::BindSocket(int sockfd, int port,  char *addr,int type)
 {
 	if(!(sockfd >= 0))
@@ -565,6 +589,7 @@ int cAsyncConn::BindSocket(int sockfd, int port,  char *addr,int type)
     sin.sin_family = AF_INET;
     sin.sin_port = htons(port);
     sin.sin_addr.s_addr =  htonl(INADDR_ANY);//listen on any aviable conn
+    
     
     if (bind(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
         fprintf(stderr, "listen_server:: could not bind socket erno %d\n",errno);
@@ -612,18 +637,25 @@ bool cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ip
 	mSockDesc = CreateSock(udp,ipv6);//this is fine seems
 	if(!(mSockDesc >= 0))
 		printf("Error on create");
-	if(!ipv6)
-	mSockDesc = BindSocket(mSockDesc,port,address,udp ? SOCK_DGRAM : SOCK_STREAM);
-	if(!(mSockDesc >= 0))
-		printf("Error on bind");
+	if(!ipv6) {
+		mSockDesc = BindSocket(mSockDesc,port,address,udp ? SOCK_DGRAM : SOCK_STREAM);
+		if(!(mSockDesc >= 0))
+			printf("Error on bind");
+	}
+	if(ipv6)
+	{
+			mSockDesc = BindSocketV6(mSockDesc,port,udp ? SOCK_DGRAM : SOCK_STREAM);
+			if(!(mSockDesc >= 0))
+				printf("Error on bind for IPv6");
+	}
 	
 	if(!udp) {
 	    mSockDesc = ListenSock(mSockDesc);
-if(!(mSockDesc >= 0))
-		printf("Error on bind");
+			if(!(mSockDesc >= 0))
+					printf("Error on bind");
 	    mSockDesc = NonBlockSock(mSockDesc);
-if(!(mSockDesc >= 0))
-		printf("Error on bind");
+			if(!(mSockDesc >= 0))
+				printf("Error on bind");
 	}
 	ok = mSockDesc > INVALID_SOCKET;
 	return !ok;

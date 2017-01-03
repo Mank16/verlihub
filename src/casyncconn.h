@@ -571,6 +571,7 @@ namespace nVerliHub {
 				 * @param add The address.
 				 */
 				int BindSocket(int sock, int port, char *addr=NULL, int type = 0);
+				int BindSocketV6(int sockfd , int port, int type);
 
 				/**
 				 * Create a new socket connection.
