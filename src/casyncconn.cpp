@@ -190,7 +190,7 @@ cAsyncConn::cAsyncConn(const string &host, int port, bool udp):
 	mBufReadPos(0),
 	mCloseAfter(0, 0)
 {
-	mMaxBuffer=MAX_SEND_SIZE;
+	mMaxBuffer = MAX_SEND_SIZE;
 	ClearLine();
 	if(udp) {
 		mType = eCT_SERVERUDP;
@@ -558,63 +558,17 @@ tSocket cAsyncConn::CreateSock(bool udp,bool ipv6)
 
 int cAsyncConn::BindSocket(int sockfd, int port,  char *addr,int type)
 {
-	if(!sockfd)
+	if(!(sockfd >= 0))
 		return -1;
-	struct servent *pse;
-	struct hostent *phe;
-	struct sockaddr_in sin;	
-	struct protoent *ppe;
-	    char *protocol;
-    sin.sin_family=AF_INET;
+	struct sockaddr_in sin;
+	memset(&sin,0,sizeof(sockaddr_in));	
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(port);
+    sin.sin_addr.s_addr =  htonl(INADDR_ANY);//listen on any aviable conn
     
-    switch(type) {
-
-        case SOCK_DGRAM:
-            protocol= "udp";
-            break;
-        case SOCK_STREAM:
-            protocol= "tcp";
-            break;
-        default:
-            fprintf(stderr, "listen_server:: unknown socket type=[%d]\n", type);
-            return -1;
-    }
-
-
-
-	if ( pse = getservbyname(addr, protocol) ) {
-        sin.sin_port = pse->s_port;
-
-    } else if ( (sin.sin_port = htons(port)) ==0) {
-         fprintf(stderr, "listen_server:: could not get service=[%s]\n", port);
-         return -1;
-    }
-
-    if (mServAddr.empty()) {
-        sin.sin_addr.s_addr= INADDR_ANY;
-
-    } else {
-        if (phe = gethostbyname(mServAddr.c_str())) {
-            memcpy(&sin.sin_addr, phe->h_addr, phe->h_length);
-
-        } else if ( (sin.sin_addr.s_addr = inet_addr(mServAddr.c_str())) == INADDR_NONE) {
-             fprintf(stderr, "listen_server:: could not get host=[%s]\n", mServAddr);
-             return -1;
-        }
-    }
-
-    if ((ppe = getprotobyname(protocol)) == 0) {
-         fprintf(stderr, "listen_server:: could not get protocol=[%s]\n", protocol);
-         return -1;
-    }
-     
-    if ((sockfd = socket(PF_INET, type, ppe->p_proto)) < 0) {  
-        fprintf(stderr, "listen_server:: could not open socket\n");
-        return -1;
-    }
-
-    if (bind(sockfd, (struct sockaddr *)&sin, sizeof(sin)) != 0) {
-        fprintf(stderr, "listen_server:: could not bind socket\n");
+    if (bind(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
+        fprintf(stderr, "listen_server:: could not bind socket erno %d\n",errno);
+        perror("bind");
         close(sockfd);
         return -1;
     }
@@ -650,19 +604,29 @@ tSocket cAsyncConn::NonBlockSock(int sock)
 #endif
 	return sock;
 }
-
+//true if fail
 bool cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv6)
 {
-	if(!mSockDesc)
+	if(!(mSockDesc >= 0))
 		return true;
-	mSockDesc = CreateSock(udp,ipv6);
+	mSockDesc = CreateSock(udp,ipv6);//this is fine seems
+	if(!(mSockDesc >= 0))
+		printf("Error on create");
+	if(!ipv6)
 	mSockDesc = BindSocket(mSockDesc,port,address,udp ? SOCK_DGRAM : SOCK_STREAM);
+	if(!(mSockDesc >= 0))
+		printf("Error on bind");
+	
 	if(!udp) {
 	    mSockDesc = ListenSock(mSockDesc);
+if(!(mSockDesc >= 0))
+		printf("Error on bind");
 	    mSockDesc = NonBlockSock(mSockDesc);
+if(!(mSockDesc >= 0))
+		printf("Error on bind");
 	}
-	ok = mSockDesc != INVALID_SOCKET;
-	return ok;
+	ok = mSockDesc > INVALID_SOCKET;
+	return !ok;
 }
 
 tSocket cAsyncConn::AcceptSock()
@@ -882,7 +846,7 @@ int cAsyncConn::Write(const string &data, bool Flush)
 				CloseNow();
 		}
 
-		if (mxServer && ok) { // buffer overfill protection, only on registered connections
+		if (mxServer && !ok) { // buffer overfill protection, only on registered connections
 			mxServer->mConnChooser.OptIn(this, eCC_OUTPUT); // choose the connection to send the rest of data as soon as possible
 
 			if (mBufSend.size() < MAX_SEND_UNBLOCK_SIZE) { // if buffer size is lower then UNBLOCK size, allow read operation on the connection
@@ -918,7 +882,7 @@ int cAsyncConn::Write(const string &data, bool Flush)
 		if (bool(mCloseAfter)) // close nice was called, close the connection
 			CloseNow();
 
-		if (mxServer && ok) { // unregister the connection for write operation
+		if (mxServer && !ok) { // unregister the connection for write operation
 			mxServer->mConnChooser.OptOut(this, eCC_OUTPUT);
 
 			if (Log(5))

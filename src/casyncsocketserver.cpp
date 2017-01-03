@@ -416,7 +416,7 @@ int cAsyncSocketServer::StartListening(int OverrideDefaultPort)
 		OverrideDefaultPort = mPort;
 	pair<cAsyncConn*, cAsyncConn*> mIsOk = this->Listen(OverrideDefaultPort, false);
 	
-	if(mIsOk.first != NULL || mIsOk.second != NULL)
+	if(mIsOk.first != NULL && mIsOk.second != NULL)
 		return 0;
 	return -1;
 }
