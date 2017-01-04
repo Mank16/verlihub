@@ -438,9 +438,13 @@ cAsyncConn * cAsyncSocketServer::ListenWithConn(cAsyncConn *ListenSock, int OnPo
 		this->mConnChooser.cConnChoose::OptIn(
 			(cConnBase *)ListenSock,
 			tChEvent(eCC_INPUT|eCC_ERROR));
-			
-		if(Log(0)) LogStream() << "Listening for connections on " << mAddr << ":" << OnPort << (UDP?" UDP":" TCP") << endl;
-		if(Log(0)) LogStream() << "Listening for connections on [" << mAddr6 << "]:" << OnPort << (UDP?" UDP":" TCP") << endl;
+		
+		if(!ipv6) {	
+			if(Log(0)) LogStream() << "Listening for connections on " << mAddr << ":" << OnPort << (UDP?" UDP":" TCP") << endl;
+		}
+		if(ipv6) {
+			if(Log(0)) LogStream() << "Listening for connections on [" << mAddr6 << "]:" << OnPort << (UDP?" UDP":" TCP") << endl;
+		}	
 		return ListenSock;
 	}
 	return NULL;
