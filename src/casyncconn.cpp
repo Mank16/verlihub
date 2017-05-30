@@ -571,7 +571,7 @@ int cAsyncConn::BindSocketV6(int sockfd, int port, int type)
 	{
 		perror("bind v6");	
 		close(sockfd);
-		return -1;
+		return INVALID_SOCKET;
 	}
 	return sockfd;
 }
@@ -579,7 +579,7 @@ int cAsyncConn::BindSocketV6(int sockfd, int port, int type)
 int cAsyncConn::BindSocket(int sockfd, int port,  char *addr,int type)
 {
 	if(!(sockfd >= 0))
-		return -1;
+		return INVALID_SOCKET;
 	struct sockaddr_in sin;
 	memset(&sin,0,sizeof(sockaddr_in));	
     sin.sin_family = AF_INET;
@@ -591,7 +591,7 @@ int cAsyncConn::BindSocket(int sockfd, int port,  char *addr,int type)
         fprintf(stderr, "listen_server:: could not bind socket erno %d\n",errno);
         perror("bind");
         close(sockfd);
-        return -1;
+        return INVALID_SOCKET;
     }
 
 	return sockfd;
@@ -600,10 +600,10 @@ int cAsyncConn::BindSocket(int sockfd, int port,  char *addr,int type)
 int cAsyncConn::ListenSock(int sock)
 {
 	if(sock < 0)
-		return -1;
+		return INVALID_SOCKET;
 	if(listen(sock, 100) == -1) {
 		vhErr(0) << "Error listening" << endl;
-		return -1;
+		return INVALID_SOCKET;
 	}
 	return sock;
 }
@@ -611,7 +611,7 @@ int cAsyncConn::ListenSock(int sock)
 tSocket cAsyncConn::NonBlockSock(int sock)
 {
 	if(sock < 0)
-		return -1;
+		return INVALID_SOCKET;
 #if !defined _WIN32
 	int flags;
 	if((flags = fcntl(sock, F_GETFL, 0)) < 0)
@@ -667,7 +667,6 @@ tSocket cAsyncConn::AcceptSock()
 	#else
 	struct sockaddr client;
 	#endif
-
 
 	/* Get a socket for the connected user.  */
 	namelen = sizeof(client);
