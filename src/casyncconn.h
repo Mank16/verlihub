@@ -377,7 +377,7 @@ namespace nVerliHub {
 				 * @param udp True if it is an UDP connection.
 				 * @return The socket descriptor or -1 if the connection already exists.
 				 */
-				bool ListenOnPort(unsigned int port, char *ia=NULL, bool udp=false,bool ipv6 = false);
+				int ListenOnPort(unsigned int port, char *ia=NULL, bool udp=false,bool ipv6 = false);
 
 				/**
 				 * Event handler function called when write buffer gets empty.

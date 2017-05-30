@@ -80,7 +80,6 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct,bool tIPv6)
 	cObj("cAsyncConn"),
 	mZlibFlag(false),
 	// mIterator(0),
-	ok(desc > 0),
 	mWritable(true),
 	mSockDesc(desc),
 	mxServer(s),
@@ -166,15 +165,12 @@ cAsyncConn::cAsyncConn(const string &host, int port, bool udp):
 	cObj("cAsyncConn"),
 	mZlibFlag(false),
 	// mIterator(0),
-	ok(false),
 	mWritable(true),
-
 //	#if !defined _WIN32
 		mSockDesc(INVALID_SOCKET),
 //	#else
 //		mSockDesc(0),
 //	#endif
-
 	mxServer(NULL),
 	mxMyFactory(NULL),
 	mxAcceptingFactory(NULL),
@@ -209,7 +205,6 @@ void cAsyncConn::Close()
 	if(mSockDesc <= 0)
 		return;
 	mWritable = false;
-	ok = false;
 	if(mxServer)
 		mxServer->OnConnClose(this);
 	TEMP_FAILURE_RETRY(closesocket(mSockDesc));
@@ -220,7 +215,7 @@ void cAsyncConn::Close()
 	}
 	else if(ErrLog(1))
 		LogStream() << "Socket not closed" << endl;
-	mSockDesc = 0;
+	mSockDesc = INVALID_SOCKET;
 }
 
 void cAsyncConn::Flush()
@@ -317,7 +312,7 @@ int cAsyncConn::ReadAll()
 	mBufEnd = 0;
 	bool udp = (this->GetType() == eCT_CLIENTUDP);
 
-	if(!ok || !mWritable)
+	if((mSockDesc == INVALID_SOCKET) || !mWritable)
 		return -1;
 
 	if(!udp) {
@@ -436,8 +431,7 @@ int cAsyncConn::SetupUDP(const string &host, int port)
 
 	if(mSockDesc == INVALID_SOCKET) {
 		vhErr(1) << "Error getting socket." << endl;
-		ok = false;
-		return -1;
+		return INVALID_SOCKET;
 	}
 
 	struct hostent *he = gethostbyname(host.c_str());
@@ -447,12 +441,10 @@ int cAsyncConn::SetupUDP(const string &host, int port)
 		mAddrIN.sin_port = htons(port);
 		mAddrIN.sin_addr = *((struct in_addr *)he->h_addr);
 		memset(&(mAddrIN.sin_zero), '\0', 8);
-		ok = true;
 		return 0;
 	} else {
 		vhErr(2) << "Error resolving host " << host << endl;
-		ok = false;
-		return -1;
+		return INVALID_SOCKET;
 	}
 }
 
@@ -460,7 +452,7 @@ int cAsyncConn::SendUDPMsg(const string &host, int port, const string &data)
 {
 	int result;
 	cAsyncConn conn(host, port, true);
-	if (conn.ok)
+	if (conn.mSockDesc > INVALID_SOCKET)
 		result = conn.Write(data, true);
 	else
 		return -1;
@@ -476,8 +468,7 @@ int cAsyncConn::Connect(const string &host, int port)
 
 	if(mSockDesc == INVALID_SOCKET) {
 		vhErr(1) << "Error getting socket." << endl;
-		ok = false;
-		return -1;
+		return INVALID_SOCKET;
 	}
 	cTime timeout(5.0);
 	SetSockOpt(SO_RCVTIMEO, &timeout, sizeof(timeval));
@@ -491,17 +482,14 @@ int cAsyncConn::Connect(const string &host, int port)
 		memset(&(dest_addr.sin_zero), '\0', 8);
 
 		int s = connect(mSockDesc, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr));
-		if(s==-1) {
+		if(s == -1) {
 			vhErr(1) << "Error connecting to " << host << ":" << port << endl;
-			ok = false;
-			return -1;
+			return INVALID_SOCKET;
 		}
-		ok = true;
-		return 0;
+		return mSockDesc;
 	} else {
 		vhErr(2) << "Error resolving host " << host << endl;
-		ok = false;
-		return -1;
+		return INVALID_SOCKET;
 	}
 }
 
@@ -626,35 +614,46 @@ tSocket cAsyncConn::NonBlockSock(int sock)
 	return sock;
 }
 //true if fail
-bool cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv6)
+int cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv6)
 {
 	if(!(mSockDesc >= 0))
-		return true;
+		return INVALID_SOCKET;
 	mSockDesc = CreateSock(udp,ipv6);//this is fine seems
-	if(!(mSockDesc >= 0))
+	if(!(mSockDesc >= 0)) {
 		printf("Error on create");
+		return INVALID_SOCKET;
+	}	
+		
 	if(!ipv6) {
 		mSockDesc = BindSocket(mSockDesc,port,address,udp ? SOCK_DGRAM : SOCK_STREAM);
-		if(!(mSockDesc >= 0))
+		if(!(mSockDesc >= 0)) {
 			printf("Error on bind");
+			return INVALID_SOCKET;	
+		}	
 	}
 	if(ipv6)
 	{
-			mSockDesc = BindSocketV6(mSockDesc,port,udp ? SOCK_DGRAM : SOCK_STREAM);
-			if(!(mSockDesc >= 0))
-				printf("Error on bind for IPv6");
+		mSockDesc = BindSocketV6(mSockDesc,port,udp ? SOCK_DGRAM : SOCK_STREAM);
+		if(!(mSockDesc >= 0)) {
+			printf("Error on bind for IPv6");
+			return INVALID_SOCKET;	
+		}	
 	}
 	
 	if(!udp) {
 	    mSockDesc = ListenSock(mSockDesc);
-			if(!(mSockDesc >= 0))
-					printf("Error on bind");
+		if(!(mSockDesc >= 0)) {
+			printf("Error on bind");
+			return INVALID_SOCKET;
+		}
+	    
 	    mSockDesc = NonBlockSock(mSockDesc);
-			if(!(mSockDesc >= 0))
+			if(!(mSockDesc >= 0)) {
 				printf("Error on bind");
+				return INVALID_SOCKET;	
+			}	
 	}
-	ok = mSockDesc > INVALID_SOCKET;
-	return !ok;
+	return mSockDesc;
 }
 
 tSocket cAsyncConn::AcceptSock()
@@ -873,7 +872,7 @@ int cAsyncConn::Write(const string &data, bool Flush)
 				CloseNow();
 		}
 
-		if (mxServer && !ok) { // buffer overfill protection, only on registered connections
+		if (mxServer && (mSockDesc > INVALID_SOCKET)) { // buffer overfill protection, only on registered connections
 			mxServer->mConnChooser.OptIn(this, eCC_OUTPUT); // choose the connection to send the rest of data as soon as possible
 
 			if (mBufSend.size() < MAX_SEND_UNBLOCK_SIZE) { // if buffer size is lower then UNBLOCK size, allow read operation on the connection

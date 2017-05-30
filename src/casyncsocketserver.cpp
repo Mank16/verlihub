@@ -426,7 +426,7 @@ int cAsyncSocketServer::StartListening(int OverrideDefaultPort)
 cAsyncConn * cAsyncSocketServer::ListenWithConn(cAsyncConn *ListenSock, int OnPort, bool UDP, bool ipv6)
 {
 	if(ListenSock != NULL) {
-		if(ListenSock->ListenOnPort(OnPort, ipv6 ? (const_cast<char*>(mAddr6.c_str())) : (const_cast<char*>(mAddr.c_str())), UDP,ipv6)) {
+		if(ListenSock->ListenOnPort(OnPort, ipv6 ? (const_cast<char*>(mAddr6.c_str())) : (const_cast<char*>(mAddr.c_str())), UDP,ipv6) == INVALID_SOCKET) {
 			if(Log(0)) {
 				if(!ipv6)
 					LogStream() << "Cannot listen on " << mAddr << ":" << OnPort << (UDP ? " UDP":" TCP") << endl;
