@@ -488,6 +488,7 @@ namespace nVerliHub {
 				bool mWritable;
 
 				/// Socket descriptor.
+				/// typedef from int (unix) , and win32 (SOCKET)
 				tSocket mSockDesc;
 
 				/// Pointer to an instance of cAsyncSocketServer.

@@ -179,7 +179,8 @@ void cAsyncSocketServer::addConnection(cAsyncConn *new_conn)
 
 	if(!new_conn)
 		throw "addConnection null pointer";
-	if(!new_conn->ok) {
+	
+	if(new_conn->mSockDesc == INVALID_SOCKET) {//socket was not created?
 		if(new_conn->Log(3))
 			new_conn->LogStream() << "Access refused " << new_conn->AddrIP() << endl;
 		new_conn->mxMyFactory->DeleteConn(new_conn);
@@ -192,7 +193,7 @@ void cAsyncSocketServer::addConnection(cAsyncConn *new_conn)
 	tCLIt it = mConnList.insert(mConnList.begin(),new_conn);
 
 	new_conn->mIterator = it;
-	if(0 > OnNewConn(new_conn))
+	if(OnNewConn(new_conn) < 0)
 		delConnection(new_conn);
 }
 
@@ -202,7 +203,8 @@ void cAsyncSocketServer::delConnection(cAsyncConn *old_conn)
 		throw "delConnection null pointer";
 
 	if (mNowTreating == old_conn) {
-		old_conn->ok = false;
+		//old_conn->ok = false;
+		delete old_conn;
 		return;
 	}
 
@@ -245,11 +247,11 @@ void cAsyncSocketServer::delConnection(cAsyncConn *old_conn)
 
 int cAsyncSocketServer::input(cAsyncConn *conn)
 {
-	int just_read=0;
+	int just_read = 0;
 	// Read all data available into a buffer
 	if(conn->ReadAll() <= 0)
 		return 0;
-	while(conn->ok && conn->mWritable) {
+	while( (conn->mSockDesc > INVALID_SOCKET) && conn->mWritable) {
 		// Create new line obj if necessary
 		if(conn->LineStatus() == AC_LS_NO_LINE)
 			conn->SetLineToRead(FactoryString(conn),'|',mMaxLineLength);

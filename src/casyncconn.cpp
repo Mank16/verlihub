@@ -107,8 +107,6 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct,bool tIPv6)
 
 			CloseNow();
 		}
-		
-		
 
 		//IP addr
 		struct ifaddrs *ifaddr= NULL,*ifa = NULL;
@@ -136,8 +134,6 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct,bool tIPv6)
 			}	
 			
 		}
-		
-
 		
 		if(mxServer && mxServer->mUseDNS) // host name
 			DNSLookup();
@@ -295,7 +291,7 @@ void cAsyncConn::CloseNice(int msec)
 {
 	OnCloseNice();
 	mWritable = false;
-	if(msec <= 0 || !mBufSend.size()) {
+	if(msec <= 0 || !mBufSend.empty()) {
 		CloseNow();
 		return;
 	}
