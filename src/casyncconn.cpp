@@ -99,7 +99,7 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct,bool tIPv6)
 	ClearLine();
 	mBufEnd = mBufReadPos = 0;
 
-	if (mSockDesc) {
+	if (mSockDesc > INVALID_SOCKET) {
 		if (getpeername(mSockDesc, &saddr, &addr_size) == -1) {
 			if (Log(2))
 				LogStream() << "Error getting peer name, closing" << endl;
@@ -202,12 +202,13 @@ cAsyncConn::~cAsyncConn()
 
 void cAsyncConn::Close()
 {
-	if(mSockDesc <= 0)
+	if(mSockDesc < 0)
 		return;
 	mWritable = false;
 	if(mxServer)
 		mxServer->OnConnClose(this);
 	TEMP_FAILURE_RETRY(closesocket(mSockDesc));
+	
 	if(errno != EINTR) {
 		sSocketCounter --;
 		if (Log(3))
@@ -482,7 +483,7 @@ int cAsyncConn::Connect(const string &host, int port)
 		memset(&(dest_addr.sin_zero), '\0', 8);
 
 		int s = connect(mSockDesc, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr));
-		if(s == -1) {
+		if(s == INVALID_SOCKET) {
 			vhErr(1) << "Error connecting to " << host << ":" << port << endl;
 			return INVALID_SOCKET;
 		}
@@ -872,7 +873,7 @@ int cAsyncConn::Write(const string &data, bool Flush)
 				CloseNow();
 		}
 
-		if (mxServer && (mSockDesc > INVALID_SOCKET)) { // buffer overfill protection, only on registered connections
+		if (mxServer && (mSockDesc >= INVALID_SOCKET)) { // buffer overfill protection, only on registered connections
 			mxServer->mConnChooser.OptIn(this, eCC_OUTPUT); // choose the connection to send the rest of data as soon as possible
 
 			if (mBufSend.size() < MAX_SEND_UNBLOCK_SIZE) { // if buffer size is lower then UNBLOCK size, allow read operation on the connection

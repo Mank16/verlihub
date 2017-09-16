@@ -180,12 +180,12 @@ void cAsyncSocketServer::addConnection(cAsyncConn *new_conn)
 	if(!new_conn)
 		throw "addConnection null pointer";
 	
-	if(new_conn->mSockDesc == INVALID_SOCKET) {//socket was not created?
+	/*if(new_conn->mSockDesc == INVALID_SOCKET) {//socket was not created?
 		if(new_conn->Log(3))
 			new_conn->LogStream() << "Access refused " << new_conn->AddrIP() << endl;
 		new_conn->mxMyFactory->DeleteConn(new_conn);
 		return;
-	}
+	}*/
 
 	mConnChooser.AddConn(new_conn);
 
@@ -193,7 +193,7 @@ void cAsyncSocketServer::addConnection(cAsyncConn *new_conn)
 	tCLIt it = mConnList.insert(mConnList.begin(),new_conn);
 
 	new_conn->mIterator = it;
-	if(OnNewConn(new_conn) < 0)
+	if(0 > OnNewConn(new_conn))
 		delConnection(new_conn);
 }
 
@@ -347,7 +347,7 @@ void cAsyncSocketServer::TimeStep()
 		mNowTreating = (cAsyncConn* )res.mConn;
 		cAsyncConn *conn = mNowTreating;
 		int activity = res.mRevent;
-		bool &OK = conn->ok;
+		bool &OK = conn->mSockDesc >= INVALID_SOCKET;
 
 		if(!mNowTreating)
 			continue;
@@ -355,7 +355,7 @@ void cAsyncSocketServer::TimeStep()
 		if(OK && (activity & eCC_INPUT) && conn->GetType() == eCT_LISTEN) {
 			// Cccept incoming connection
 			int i=0;
-			cAsyncConn *new_conn;
+			cAsyncConn *new_conn = NULL;
 			do {
 
 				new_conn = conn->Accept();
@@ -373,7 +373,7 @@ void cAsyncSocketServer::TimeStep()
 			// Data to be read or data in buffer
 		{
 			if(input(conn) <= 0)
-				OK=false;
+				OK = false;
 		}
 		if(OK && (activity & eCC_OUTPUT)) {
 			// NOTE: in sockbuf::write is a bug, missing buf increment, it will block until whole buffer is sent
