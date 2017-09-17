@@ -299,7 +299,8 @@ void cAsyncConn::CloseNice(int msec)
 void cAsyncConn::CloseNow()
 {
 	mWritable = false;
-	ok = false;
+	//ok = false;
+	mSockDesc = -1;
 	if(mxServer) {
 		mxServer->mConnChooser.OptOut((cConnBase*)this, eCC_ALL);
 		mxServer->mConnChooser.OptIn((cConnBase*)this, eCC_CLOSE);
@@ -909,7 +910,7 @@ int cAsyncConn::Write(const string &data, bool Flush)
 		if (bool(mCloseAfter)) // close nice was called, close the connection
 			CloseNow();
 
-		if (mxServer && !ok) { // unregister the connection for write operation
+		if (mxServer && (mSockDesc != INVALID_SOCKET) ) { // unregister the connection for write operation
 			mxServer->mConnChooser.OptOut(this, eCC_OUTPUT);
 
 			if (Log(5))
