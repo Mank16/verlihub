@@ -41,7 +41,7 @@ class cConnBase
 	public: 
 		virtual operator tSocket() const = 0;
 	
-		virtual bool operator==(cConnBase* rts);
+		virtual bool operator==(cConnBase* rts){};
 	
 };
 
