@@ -463,7 +463,7 @@ namespace nVerliHub {
 				}
 				
 				/**/
-				bool operator==(cConnBase* rts)
+				bool operator==(cAsyncConn* rts)
 				{
 					return rts->mSockDesc == mSockDesc;
 				} 
