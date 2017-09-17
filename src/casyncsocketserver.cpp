@@ -347,7 +347,9 @@ void cAsyncSocketServer::TimeStep()
 		mNowTreating = (cAsyncConn* )res.mConn;
 		cAsyncConn *conn = mNowTreating;
 		int activity = res.mRevent;
-		bool OK = conn->getok();
+		bool OK = false;
+		if(conn)
+		   OK = conn->getok();
 
 		if(!mNowTreating)
 			continue;
