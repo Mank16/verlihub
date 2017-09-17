@@ -80,7 +80,7 @@ bool cConnChoose::AddConn(cConnBase *conn)
 
 	mConnList.push_back(conn);
 	//mConnList[sock] = conn;
-	mLastSock = conn;
+	mLastSock = *conn;
 	return true;
 }
 
