@@ -266,7 +266,7 @@ void cConnDC::OnFlushDone()
 		SetLSFlag(eLS_NICKLST);
 		mNickListInProgress = false;
 		
-		if( (mSockDesc > INVALID_SOCKET) || !mWritable) { //need check
+		if( !getok() || !mWritable) { //need check
 			if(Log(2)) LogStream() << "Connection closed during nicklist" << endl;
 		} else {
 			if(Log(2)) LogStream() << "Login after nicklist" << endl;

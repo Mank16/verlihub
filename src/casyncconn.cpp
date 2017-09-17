@@ -54,7 +54,7 @@
 #include "ctime.h"
 #include "stringutils.h"
 
-#if ! defined _WIN32
+#if !defined _WIN32
 	#define sockoptval_t int
 	inline int closesocket(int s)
 	{
@@ -214,7 +214,7 @@ void cAsyncConn::Close()
 		LogStream() << "Socket not closed" << endl;
 	
 	
-	mSockDesc = INVALID_SOCKET;
+	mSockDesc = INVALID_SOCKET;//did we even need this?
 }
 
 void cAsyncConn::Flush()
@@ -297,8 +297,7 @@ void cAsyncConn::CloseNice(int msec)
 void cAsyncConn::CloseNow()
 {
 	mWritable = false;
-	//ok = false;
-	mSockDesc = INVALID_SOCKET;//check
+	closesocket(mSockDesc);
 	if(mxServer) {
 		mxServer->mConnChooser.OptOut((cConnBase*)this, eCC_ALL);
 		mxServer->mConnChooser.OptIn((cConnBase*)this, eCC_CLOSE);
@@ -312,7 +311,7 @@ int cAsyncConn::ReadAll()
 	mBufEnd = 0;
 	bool udp = (this->GetType() == eCT_CLIENTUDP);
 
-	if((mSockDesc == INVALID_SOCKET) || !mWritable)
+	if( !getok() || !mWritable)
 		return -1;
 
 	if(!udp) {
@@ -524,7 +523,7 @@ tSocket cAsyncConn::CreateSock(bool udp,bool ipv6)
 
 		/* Fix the address already in use error */
 		if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &yes, sizeof(yes)) == -1) {
-			perror("set sock err");
+			LogStream() << "set sock err " << sock << endl;
 			closesocket(sock);
 			return INVALID_SOCKET;
 		}
@@ -557,7 +556,7 @@ int cAsyncConn::BindSocketV6(int sockfd, int port, int type)
 	int ret = bind(sockfd, res->ai_addr, res->ai_addrlen);
 	if(ret == -1)
 	{
-		perror("bind v6");	
+		LogStream() << "bind v6" << ret << endl;	
 		close(sockfd);
 		return INVALID_SOCKET;
 	}
@@ -566,8 +565,9 @@ int cAsyncConn::BindSocketV6(int sockfd, int port, int type)
 
 int cAsyncConn::BindSocket(int sockfd, int port,  char *addr,int type)
 {
-	if(!(sockfd >= 0))
+	if(sockfd < 0)
 		return INVALID_SOCKET;
+		
 	struct sockaddr_in sin;
 	memset(&sin,0,sizeof(sockaddr_in));	
     sin.sin_family = AF_INET;
@@ -577,7 +577,7 @@ int cAsyncConn::BindSocket(int sockfd, int port,  char *addr,int type)
     
     if (bind(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
         fprintf(stderr, "listen_server:: could not bind socket erno %d\n",errno);
-        perror("bind");
+        LogStream() << "bind v4" << errno << endl;
         close(sockfd);
         return INVALID_SOCKET;
     }
@@ -620,14 +620,15 @@ int cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv
 		return INVALID_SOCKET;
 	mSockDesc = CreateSock(udp,ipv6);//this is fine seems
 	if(!(mSockDesc >= 0)) {
-		printf("Error on create");
+		//printf("Error on create");
+		LogStream() << "error create" << mSockDesc << endl;
 		return INVALID_SOCKET;
 	}	
 		
 	if(!ipv6) {
 		mSockDesc = BindSocket(mSockDesc,port,address,udp ? SOCK_DGRAM : SOCK_STREAM);
 		if(!(mSockDesc >= 0)) {
-			printf("Error on bind");
+			LogStream() << "error bind" << mSockDesc << endl;
 			return INVALID_SOCKET;	
 		}	
 	}
@@ -635,7 +636,8 @@ int cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv
 	{
 		mSockDesc = BindSocketV6(mSockDesc,port,udp ? SOCK_DGRAM : SOCK_STREAM);
 		if(!(mSockDesc >= 0)) {
-			printf("Error on bind for IPv6");
+			//printf("Error on bind for IPv6");
+			LogStream() << "Error on bind for IPv6" << mSockDesc << endl;
 			return INVALID_SOCKET;	
 		}	
 	}
@@ -643,13 +645,15 @@ int cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv
 	if(!udp) {
 	    mSockDesc = ListenSock(mSockDesc);
 		if(!(mSockDesc >= 0)) {
-			printf("Error on bind");
+			//printf("Error on bind");
+			LogStream() << "Error on bind for IPv4" << mSockDesc << endl;
 			return INVALID_SOCKET;
 		}
 	    
 	    mSockDesc = NonBlockSock(mSockDesc);
 			if(!(mSockDesc >= 0)) {
-				printf("Error on bind");
+				//printf("Error on bind");
+				LogStream() << "Error on NonBlockSock Set" << mSockDesc << endl;
 				return INVALID_SOCKET;	
 			}	
 	}
@@ -908,7 +912,7 @@ int cAsyncConn::Write(const string &data, bool Flush)
 		if (bool(mCloseAfter)) // close nice was called, close the connection
 			CloseNow();
 
-		if (mxServer && (mSockDesc != INVALID_SOCKET) ) { // unregister the connection for write operation
+		if (mxServer && (mSockDesc > INVALID_SOCKET) ) { // unregister the connection for write operation
 			mxServer->mConnChooser.OptOut(this, eCC_OUTPUT);
 
 			if (Log(5))

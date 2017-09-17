@@ -251,7 +251,7 @@ int cAsyncSocketServer::input(cAsyncConn *conn)
 	// Read all data available into a buffer
 	if(conn->ReadAll() <= 0)
 		return 0;
-	while( (conn->mSockDesc > INVALID_SOCKET) && conn->mWritable) {
+	while( (conn->getok()) && conn->mWritable) {
 		// Create new line obj if necessary
 		if(conn->LineStatus() == AC_LS_NO_LINE)
 			conn->SetLineToRead(FactoryString(conn),'|',mMaxLineLength);
@@ -347,7 +347,7 @@ void cAsyncSocketServer::TimeStep()
 		mNowTreating = (cAsyncConn* )res.mConn;
 		cAsyncConn *conn = mNowTreating;
 		int activity = res.mRevent;
-		bool OK = conn->mSockDesc >= INVALID_SOCKET;
+		bool OK = conn->getok();
 
 		if(!mNowTreating)
 			continue;
@@ -416,6 +416,7 @@ int cAsyncSocketServer::StartListening(int OverrideDefaultPort)
 		mPort = OverrideDefaultPort;
 	if(mPort && !OverrideDefaultPort)
 		OverrideDefaultPort = mPort;
+		// ipv4/ipv6
 	pair<cAsyncConn*, cAsyncConn*> mIsOk = this->Listen(OverrideDefaultPort, false);
 	
 	if(mIsOk.first != NULL && mIsOk.second != NULL)

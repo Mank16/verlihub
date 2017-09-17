@@ -154,7 +154,7 @@ namespace nVerliHub {
 				 * @param port The port of the connection.
 				 * @param udp If the connection is UDP socket.
 				 */
-				cAsyncConn(const string & host, int port, bool udp=false);
+				cAsyncConn(const string &host, int port, bool udp = false);
 
 				/**
 				 * Class destructor.
