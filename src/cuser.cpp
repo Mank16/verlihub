@@ -146,7 +146,7 @@ cUser::~cUser()
 
 bool cUser::CanSend()
 {
-	return mInList && mxConn && mxConn->ok;
+	return mInList && mxConn && mxConn->getok();
 }
 
 bool cUser::HasFeature(unsigned feature)

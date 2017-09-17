@@ -582,7 +582,7 @@ void cServerDC::SendToAll(string &data, int cm, int cM) // class range is ignore
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
 		conn = (cConnDC*)(*i);
 
-		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList)
+		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList)
 			conn->Send(data, true);
 	}
 }
@@ -597,7 +597,7 @@ int cServerDC::SendToAllWithNick(const string &start,const string &end, int cm,i
 		conn=(cConnDC *)(*i);
 		if(
 			conn &&
-			conn->ok &&
+			conn->getok() &&
 			conn->mpUser &&
 			conn->mpUser->mInList &&
 			conn->mpUser->mClass >= cm &&
@@ -623,7 +623,7 @@ int cServerDC::SendToAllWithNickVars(const string &start, const string &end, int
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
 		conn = (cConnDC *)(*i);
 
-		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList && conn->mpUser->mClass >= cm && conn->mpUser->mClass <= cM) {
+		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList && conn->mpUser->mClass >= cm && conn->mpUser->mClass <= cM) {
 			// replace variables
 			tend = end;
 			ReplaceVarInString(tend, "NICK", tend, conn->mpUser->mNick);
@@ -654,7 +654,7 @@ int cServerDC::SendToAllNoNickVars(const string &msg, int cm, int cM)
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
 		conn = (cConnDC *)(*i);
 
-		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList && conn->mpUser->mClass >= cm && conn->mpUser->mClass <= cM) {
+		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList && conn->mpUser->mClass >= cm && conn->mpUser->mClass <= cM) {
 			// replace variables
 			tmsg = msg;
 			ReplaceVarInString(tmsg, "NICK", tmsg, conn->mpUser->mNick);
@@ -684,7 +684,7 @@ int cServerDC::SendToAllWithNickCC(const string &start,const string &end, int cm
 		conn=(cConnDC *)(*i);
 		if(
 			conn &&
-			conn->ok &&
+			conn->getok() &&
 			conn->mpUser &&
 			conn->mpUser->mInList &&
 			conn->mpUser->mClass >= cm &&
@@ -711,7 +711,7 @@ int cServerDC::SendToAllWithNickCCVars(const string &start, const string &end, i
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
 		conn = (cConnDC *)(*i);
 
-		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList && conn->mpUser->mClass >= cm && conn->mpUser->mClass <= cM && cc_zone.npos != cc_zone.find(conn->mCC)) {
+		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList && conn->mpUser->mClass >= cm && conn->mpUser->mClass <= cM && cc_zone.npos != cc_zone.find(conn->mCC)) {
 			// replace variables
 			tend = end;
 			ReplaceVarInString(tend, "NICK", tend, conn->mpUser->mNick);
@@ -742,7 +742,7 @@ unsigned int cServerDC::SearchToAll(cConnDC *conn, string &data, bool passive, b
 		for (i = mConnList.begin(); i != mConnList.end(); i++) {
 			other = (cConnDC*)(*i);
 
-			if (!other || !other->ok || !other->mpUser || !other->mpUser->mInList) // base condition
+			if (!other || !other->getok() || !other->mpUser || !other->mpUser->mInList) // base condition
 				continue;
 
 			if (other->mpUser->IsPassive && !(other->mpUser->mMyFlag & eMF_NAT)) // passive request to passive user, allow if other user supports nat connection
@@ -773,7 +773,7 @@ unsigned int cServerDC::SearchToAll(cConnDC *conn, string &data, bool passive, b
 			for (i = mConnList.begin(); i != mConnList.end(); i++) {
 				other = (cConnDC*)(*i);
 
-				if (!other || !other->ok || !other->mpUser || !other->mpUser->mInList) // base condition
+				if (!other || !other->getok() || !other->mpUser || !other->mpUser->mInList) // base condition
 					continue;
 
 				if (tth && !(other->mFeatures & eSF_TTHSEARCH)) // dont send to user without tth search support
@@ -801,7 +801,7 @@ unsigned int cServerDC::SearchToAll(cConnDC *conn, string &data, bool passive, b
 			for (i = mConnList.begin(); i != mConnList.end(); i++) {
 				other = (cConnDC*)(*i);
 
-				if (!other || !other->ok || !other->mpUser || !other->mpUser->mInList) // base condition
+				if (!other || !other->getok() || !other->mpUser || !other->mpUser->mInList) // base condition
 					continue;
 
 				if (tth && !(other->mFeatures & eSF_TTHSEARCH)) // dont send to user without tth search support
@@ -838,7 +838,7 @@ unsigned int cServerDC::CollectExtJSON(string &dest, cConnDC *conn)
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
 		other = (cConnDC*)(*i);
 
-		if (!other || !other->ok || !other->mpUser || !other->mpUser->mInList) // base condition
+		if (!other || !other->getok() || !other->mpUser || !other->mpUser->mInList) // base condition
 			continue;
 
 		if (!(other->mFeatures & eSF_EXTJSON2)) // only those who support this
@@ -1763,7 +1763,7 @@ int cServerDC::DoRegisterInHublist(string host, unsigned int port, string reply)
 
 		pHubList = new cAsyncConn(curhost, port); // connect
 
-		if (!pHubList || !pHubList->ok) {
+		if (!pHubList || !pHubList->getok()) {
 			if (reply.size())
 				to_user << _("Error connecting") << "\r\n";
 
@@ -1812,7 +1812,7 @@ int cServerDC::DoRegisterInHublist(string host, unsigned int port, string reply)
 		pHubList->Write(to_serv.str(), true); // send it
 
 		if (reply.size()) {
-			if (pHubList->ok)
+			if (pHubList->getok())
 				to_user << _("Done");
 			else
 				to_user << _("Error sending");
@@ -2824,7 +2824,7 @@ void cServerDC::DoStackTrace()
 
 	cAsyncConn *http = new cAsyncConn(CRASH_SERV_ADDR, CRASH_SERV_PORT); // try to send via http
 
-	if (!http || !http->ok) {
+	if (!http || !http->getok()) {
 		vhErr(0) << "Failed connecting to crash server, please send above stack backtrace to developers" << endl;
 
 		if (http) {
@@ -2849,7 +2849,7 @@ void cServerDC::DoStackTrace()
 	http_req << bt.str(); // content itself
 	http->Write(http_req.str(), true);
 
-	if (http->ok) {
+	if (http->getok()) {
 		vhErr(0) << "Successfully sent stack backtrace to crash server" << endl;
 	} else {
 		vhErr(0) << "Failed sending to crash server, please send above stack backtrace to developers" << endl;

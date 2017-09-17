@@ -90,7 +90,7 @@ string tPluginBase::Error()
 	#else
 	error = dlerror();
 	#endif
-	return string(error?error:"ok");
+	return string(error ? error:"ok");
 }
 
 int tPluginBase::StrLog(ostream & ostr, int level)

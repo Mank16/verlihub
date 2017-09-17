@@ -166,11 +166,7 @@ cAsyncConn::cAsyncConn(const string &host, int port, bool udp):
 	mZlibFlag(false),
 	// mIterator(0),
 	mWritable(true),
-//	#if !defined _WIN32
-		mSockDesc(INVALID_SOCKET),
-//	#else
-//		mSockDesc(0),
-//	#endif
+	mSockDesc(INVALID_SOCKET),
 	mxServer(NULL),
 	mxMyFactory(NULL),
 	mxAcceptingFactory(NULL),
@@ -216,6 +212,8 @@ void cAsyncConn::Close()
 	}
 	else if(ErrLog(1))
 		LogStream() << "Socket not closed" << endl;
+	
+	
 	mSockDesc = INVALID_SOCKET;
 }
 
@@ -300,7 +298,7 @@ void cAsyncConn::CloseNow()
 {
 	mWritable = false;
 	//ok = false;
-	mSockDesc = -1;
+	mSockDesc = INVALID_SOCKET;//check
 	if(mxServer) {
 		mxServer->mConnChooser.OptOut((cConnBase*)this, eCC_ALL);
 		mxServer->mConnChooser.OptIn((cConnBase*)this, eCC_CLOSE);
@@ -874,7 +872,7 @@ int cAsyncConn::Write(const string &data, bool Flush)
 				CloseNow();
 		}
 
-		if (mxServer && (mSockDesc >= INVALID_SOCKET)) { // buffer overfill protection, only on registered connections
+		if (mxServer && (mSockDesc > INVALID_SOCKET)) { // buffer overfill protection, only on registered connections
 			mxServer->mConnChooser.OptIn(this, eCC_OUTPUT); // choose the connection to send the rest of data as soon as possible
 
 			if (mBufSend.size() < MAX_SEND_UNBLOCK_SIZE) { // if buffer size is lower then UNBLOCK size, allow read operation on the connection

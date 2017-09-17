@@ -307,7 +307,7 @@ int cAsyncSocketServer::OnTimerBase(cTime &now)
 		mT.conn = now;
 
 		for (it=mConnList.begin(); it != mConnList.end(); ++it) {
-			if ((*it)->ok)
+			if ((*it)->mSockDesc > INVALID_SOCKET)
 				(*it)->OnTimerBase(now);
 		}
 	}
