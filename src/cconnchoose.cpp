@@ -29,7 +29,7 @@ namespace nVerliHub {
 
 cConnChoose::cConnChoose()
 {
-	mLastSock = 0;
+	mLastSock = -1;
 }
 
 
@@ -70,12 +70,13 @@ inline cConnBase * cConnChoose::operator[] (tSocket sock)
 
 bool cConnChoose::AddConn(cConnBase *conn)
 {
-	if ( conn == NULL ) return false;
+	if (!conn) return false;
 	tSocket sock = (tSocket)(*conn);
 	// resize
 	if ( (tSocket)mConnList.size() <= sock ) mConnList.resize(sock+sock/4, NULL);
 	// don't add twice
- 	if ( mConnList[sock] != NULL ) return false;
+ 	if ( *( mConnList[sock] ) > INVALID_SOCKET ) return false;
+
 
 	if (sock > mLastSock) mLastSock = sock;
 

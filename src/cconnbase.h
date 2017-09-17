@@ -34,7 +34,7 @@ namespace nVerliHub {
 #endif
 
 /** a Base class for cConnChoose Usage - for connections
-	provides pure virtual conversion to a tSocket (uint or SOCKET) type
+	provides pure virtual conversion to a tSocket (int or SOCKET) type
  */
 class cConnBase
 {

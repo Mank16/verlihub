@@ -119,15 +119,17 @@ public:
 	cConnChoose();
 	virtual ~cConnChoose();
 
-	#ifndef _WIN32
+	/*#ifndef _WIN32
+	
 	#ifdef USE_OLD_CONNLIST
 	typedef tcHashListMap <cConnBase* , tSocket> tConnList;
-	#else
+	#else*/
 	typedef vector<cConnBase*> tConnList;
-	#endif
+	/*#endif
+	
 	#else
 	typedef tHashArray<cConnBase*> tConnList;
-	#endif
+	#endif*/
 
 	/**
 	* Add new connection to be handled by connection manager.
