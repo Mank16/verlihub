@@ -71,25 +71,31 @@ inline cConnBase * cConnChoose::operator[] (tSocket sock)
 bool cConnChoose::AddConn(cConnBase *conn)
 {
 	if (!conn) return false;
-	tSocket sock = (tSocket)(*conn);
+	//tSocket sock = (tSocket)(*conn);
 	// resize
 	//if ( (tSocket)mConnList.size() <= sock ) mConnList.resize(sock+sock/4, NULL);
 	// don't add twice
  	//if ( ( mConnList[sock] ) > INVALID_SOCKET ) return false;
-	if (sock > mLastSock) mLastSock = sock;
+	//if (sock > mLastSock) mLastSock = sock;
 
 	mConnList.push_back(conn);
 	//mConnList[sock] = conn;
+	mLastSock = conn;
 	return true;
 }
 
 bool cConnChoose::DelConn(cConnBase *conn)
 {
-	tSocket sock = (tSocket)(*conn);
-	if ( (tSocket)mConnList.size() <= sock ) return false;
+	//tSocket sock = (tSocket)(*conn);
+	//if ( (tSocket)mConnList.size() <= sock ) return false;
 	OptOut(conn, eCC_ALL);
  	OptOut(conn, eCC_CLOSE);
-	mConnList[sock] = NULL;
+	//mConnList[sock] = NULL;
+	for (vector<cConnBase*>::const_iterator it;it!=mConnList.end();++it)
+	{
+				if( (*it) == conn)
+	                      mConnList.erase(it);			
+	}
 	return true;
 }
 

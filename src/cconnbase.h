@@ -38,7 +38,11 @@ namespace nVerliHub {
  */
 class cConnBase
 {
-	public: virtual operator tSocket() const = 0;
+	public: 
+		virtual operator tSocket() const = 0;
+	
+		virtual bool operator==(cConnBase* rts) = 0;
+	
 };
 
 	}; // namespace nSocket

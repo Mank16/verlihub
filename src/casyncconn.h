@@ -461,6 +461,13 @@ namespace nVerliHub {
 				{
 					return mSockDesc;
 				}
+				
+				/**/
+				bool operator==(cConnBase* rts)
+				{
+					return rts.mSockDesc == mSockDesc;
+				} 
+				
 
 				/**
 				 * Write the given data into the output buffer.
