@@ -92,11 +92,16 @@ bool cConnChoose::DelConn(cAsyncConn *conn)
 	OptOut(conn, eCC_ALL);
  	OptOut(conn, eCC_CLOSE);
 	//mConnList[sock] = NULL;
+	vector<cAsyncConn*>::const_iterator cver;
 	for (vector<cAsyncConn*>::const_iterator it = mConnList.cbegin();it!=mConnList.cend();++it)
 	{
-				if( (*it)->mSockDesc == conn->mSockDesc)
-	                      mConnList.erase(it);			
+				if( (*it)->mSockDesc == conn->mSockDesc) // find
+				{
+					cver = it;
+					break;
+				}								
 	}
+	mConnList.erase(cver);
 	return true;
 }
 
