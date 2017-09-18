@@ -124,7 +124,7 @@ public:
 	#ifdef USE_OLD_CONNLIST
 	typedef tcHashListMap <cConnBase* , tSocket> tConnList;
 	#else*/
-	typedef vector<cConnBase*> tConnList;
+	typedef vector<cAsyncConn*> tConnList;
 	/*#endif
 	
 	#else

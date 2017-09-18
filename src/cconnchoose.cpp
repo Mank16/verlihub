@@ -68,7 +68,7 @@ inline cConnBase * cConnChoose::operator[] (tSocket sock)
 
 #else
 
-bool cConnChoose::AddConn(cConnBase *conn)
+bool cConnChoose::AddConn(cAsyncConn *conn)
 {
 	if (!conn) return false;
 	//tSocket sock = (tSocket)(*conn);
@@ -80,39 +80,43 @@ bool cConnChoose::AddConn(cConnBase *conn)
 
 	mConnList.push_back(conn);
 	//mConnList[sock] = conn;
-	mLastSock = *conn;
+	if ( (conn->mSockDesc) > mLastSock)
+			mLastSock = conn->mSockDesc;
 	return true;
 }
 
-bool cConnChoose::DelConn(cConnBase *conn)
+bool cConnChoose::DelConn(cAsyncConn *conn)
 {
 	//tSocket sock = (tSocket)(*conn);
 	//if ( (tSocket)mConnList.size() <= sock ) return false;
 	OptOut(conn, eCC_ALL);
  	OptOut(conn, eCC_CLOSE);
 	//mConnList[sock] = NULL;
-	for (vector<cConnBase*>::const_iterator it;it!=mConnList.end();++it)
+	for (vector<cAsyncConn*>::const_iterator it;it!=mConnList.end();++it)
 	{
-				if( (*it) == conn)
+				if( (*it)->mSockDesc == conn->mSockDesc)
 	                      mConnList.erase(it);			
 	}
 	return true;
 }
 
-bool cConnChoose::HasConn(cConnBase *conn)
+bool cConnChoose::HasConn(cAsyncConn *conn)
 {
-	tSocket sock = (tSocket)(*conn);
-	if ( (tSocket)mConnList.size() <= sock ) return false;
-	return mConnList[sock] != NULL;
+//	tSocket sock = (tSocket)(*conn);
+//	if ( (tSocket)mConnList.size() <= sock ) return false;
+//	return mConnList[sock] != NULL;
+    vector<cAsyncConn*>::iterator results = std::find(std::begin(mConnList), std::end(mConnList), conn);
+	return results != std::end(mConnList);
 }
-
+//this is used?
+/*
 inline cConnBase * cConnChoose::operator[] (tSocket sock)
 {
 	if(tSocket(mConnList.size()) > sock)
 		return mConnList[sock];
 	else
 		return NULL;
-}
+}*/
 #endif
 
 inline void cConnChoose::OptIn(cConnBase* conn, nEnums::tChEvent mask)
