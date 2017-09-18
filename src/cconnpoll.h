@@ -94,7 +94,7 @@ public:
 	* @param conn The connection.
 	* @return True if connection is added; otherwise false.
 	*/
-	virtual bool AddConn(cConnBase *conn);
+	virtual bool AddConn(cAsyncConn *conn);
 
 	/**
 	  * Wrapper for pollfd structure. It provides constructor and reset method

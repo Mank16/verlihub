@@ -17,7 +17,7 @@
 	Please see http://www.gnu.org/licenses/ for a copy
 	of the GNU General Public License.
 */
-
+#include <algorithm> 
 #include "cconnchoose.h"
 
 namespace nVerliHub {
@@ -108,15 +108,20 @@ bool cConnChoose::HasConn(cAsyncConn *conn)
     vector<cAsyncConn*>::iterator results = std::find(std::begin(mConnList), std::end(mConnList), conn);
 	return results != std::end(mConnList);
 }
-//this is used?
-/*
+
 inline cConnBase * cConnChoose::operator[] (tSocket sock)
 {
-	if(tSocket(mConnList.size()) > sock)
+	/*if(tSocket(mConnList.size()) > sock)
 		return mConnList[sock];
 	else
-		return NULL;
-}*/
+		return NULL;*/
+	for (vector<cAsyncConn*>::const_iterator it;it!=mConnList.end();++it)
+	{
+				if( (*it)->mSockDesc == sock)
+	                      return *it;
+	}	
+		
+}
 #endif
 
 inline void cConnChoose::OptIn(cConnBase* conn, nEnums::tChEvent mask)

@@ -152,7 +152,7 @@ int cConnPoll::poll(int wp_sec)
 #endif
 }
 
-bool cConnPoll::AddConn(cConnBase *conn)
+bool cConnPoll::AddConn(cAsyncConn *conn)
 {
 	if(!cConnChoose::AddConn(conn))
 		return false;
