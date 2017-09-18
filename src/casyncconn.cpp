@@ -106,9 +106,23 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct,bool tIPv6)
 
 			CloseNow();
 		}
+		char ipstr[INET6_ADDRSTRLEN];
+		int port = 0;
+		// deal with both IPv4 and IPv6:
+		if (saddr.sa_family == AF_INET) {
+			struct sockaddr_in *s = (struct sockaddr_in *)&saddr;
+			port = ntohs(s->sin_port);
+			inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
+			mAddrIP = ipstr;
+		} else { // AF_INET6
+			struct sockaddr_in6 *s = (struct sockaddr_in6 *)&saddr;
+			port = ntohs(s->sin6_port);
+			inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
+			mAddrIP6 = ipstr;
+		}
 
 		//IP addr
-		struct ifaddrs *ifaddr= NULL,*ifa = NULL;
+		/*struct ifaddrs *ifaddr= NULL,*ifa = NULL;
 		void *tmp = NULL;
 		
 		getifaddrs(&ifaddr);
@@ -132,7 +146,7 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct,bool tIPv6)
 				mAddrIP6 = address;
 			}	
 			
-		}
+		}*/
 		
 		if(mxServer && mxServer->mUseDNS) // host name
 			DNSLookup();
