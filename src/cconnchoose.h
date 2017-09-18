@@ -53,8 +53,9 @@
 #endif // _WIN32
 
 #include "ctime.h"
-#include "cconnbase.h"
 
+#include "cconnbase.h"
+#include "casyncconn.h"
 #ifndef _WIN32
 	#ifndef USE_OLD_CONNLIST
 		#include <vector>
@@ -136,9 +137,9 @@ public:
 	* @param conn The connection.
 	* @return True if connection is added; otherwise false.
 	*/
-	virtual bool AddConn(cConnBase *);
-	virtual bool DelConn(cConnBase *);
-	virtual bool HasConn(cConnBase *);
+	virtual bool AddConn(cAsyncConn *);
+	virtual bool DelConn(cAsyncConn *);
+	virtual bool HasConn(cAsyncConn *);
 
 	virtual cConnBase * operator[] (tSocket sock);
 
