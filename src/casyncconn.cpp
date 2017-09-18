@@ -214,7 +214,7 @@ void cAsyncConn::Close()
 		LogStream() << "Socket not closed" << endl;
 	
 	
-	mSockDesc = INVALID_SOCKET;//did we even need this?
+	//mSockDesc = INVALID_SOCKET;//did we even need this?
 }
 
 void cAsyncConn::Flush()
@@ -297,7 +297,7 @@ void cAsyncConn::CloseNice(int msec)
 void cAsyncConn::CloseNow()
 {
 	mWritable = false;
-	closesocket(mSockDesc);
+	//closesocket(mSockDesc);
 	if(mxServer) {
 		mxServer->mConnChooser.OptOut((cConnBase*)this, eCC_ALL);
 		mxServer->mConnChooser.OptIn((cConnBase*)this, eCC_CLOSE);
