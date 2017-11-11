@@ -427,7 +427,7 @@ int cAsyncSocketServer::StartListening(int OverrideDefaultPort)
 	return -1;
 }
 
-void cAsyncSocketServer::LogOnListen(std::string& mess, int OnPort, bool bipv6 , bool bUDP)
+void cAsyncSocketServer::LogOnListen(std::string mess, int OnPort, bool bipv6 , bool bUDP)
 {
 	if(Log(0))
 	{

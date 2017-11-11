@@ -42,7 +42,7 @@
 #include "casyncconn.h"
 #include "cprotocol.h"
 // TODO: did we need _WIN32 case ( aka if)?
-#if !defined _WIN32
+/*#if !defined _WIN32*/
 	#include <ifaddrs.h>
 	#include <arpa/inet.h>
 	#include <netinet/in.h>        /* for sockaddr_in */
@@ -52,9 +52,9 @@
 	
 	inline int closesocket(int s)
 	{
-		return ::close(s);
+		return ::shutdown(s,2);
 	}	
-#endif
+//#endif
 
 #include <unistd.h>
 #include <fcntl.h>

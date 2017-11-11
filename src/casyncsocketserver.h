@@ -296,7 +296,7 @@ namespace nVerliHub {
 			/// Pointer to the connection that server is currently handling
 			cAsyncConn * mNowTreating;
 			
-			void LogOnListen(std::string& mess, int OnPort, bool bipv6 , bool bUDP)
+			void LogOnListen(std::string mess, int OnPort, bool bipv6 , bool bUDP);
 		};
 		/// @}
 	}; // namespace nSocket
