@@ -26,7 +26,7 @@
 #include "casyncsocketserver.h"
 #include "cserverdc.h"
 
-#if defined _WIN32
+/*#if defined _WIN32
 #  include <Winsock2.h>
 #  define ECONNRESET WSAECONNRESET
 #  define ETIMEDOUT WSAETIMEDOUT
@@ -34,18 +34,26 @@
 #  define socklen_t int
 #  define sockoptval_t char
 #endif
-
+*/
 #if HAVE_ERRNO_H
 	#include <errno.h>
 #endif
+
 #include "casyncconn.h"
 #include "cprotocol.h"
+// TODO: did we need _WIN32 case ( aka if)?
 #if !defined _WIN32
 	#include <ifaddrs.h>
 	#include <arpa/inet.h>
 	#include <netinet/in.h>        /* for sockaddr_in */
 	#include <sys/socket.h>        /* for AF_INET */
 	#include <netdb.h>             /* for gethostbyaddr */
+	#define sockoptval_t int
+	
+	inline int closesocket(int s)
+	{
+		return ::close(s);
+	}	
 #endif
 
 #include <unistd.h>
@@ -53,14 +61,6 @@
 #include <string.h>
 #include "ctime.h"
 #include "stringutils.h"
-
-#if !defined _WIN32
-	#define sockoptval_t int
-	inline int closesocket(int s)
-	{
-		return ::close(s);
-	}
-#endif
 
 #ifndef MSG_NOSIGNAL
 	#define MSG_NOSIGNAL 0
@@ -76,7 +76,7 @@ namespace nVerliHub {
 char *cAsyncConn::msBuffer = new char[MAX_MESS_SIZE + 1];
 unsigned long cAsyncConn::sSocketCounter = 0;
 
-cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct,bool tIPv6):
+cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct, bool tIPv6):
 	cObj("cAsyncConn"),
 	mZlibFlag(false),
 	// mIterator(0),
@@ -107,21 +107,18 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct,bool tIPv6)
 			CloseNow();
 		}
 		char ipstr[INET6_ADDRSTRLEN];
-		int port = 0;
 		// deal with both IPv4 and IPv6:
 		if (saddr.sa_family == AF_INET) {
 			struct sockaddr_in *s = (struct sockaddr_in *)&saddr;
-			port = ntohs(s->sin_port);
 			inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
 			mAddrIP = ipstr;
 		} else { // AF_INET6
 			struct sockaddr_in6 *s = (struct sockaddr_in6 *)&saddr;
-			port = ntohs(s->sin6_port);
 			inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
 			mAddrIP6 = ipstr;
 		}
 
-		//IP addr
+		//IP addr local? did we need it?
 		/*struct ifaddrs *ifaddr= NULL,*ifa = NULL;
 		void *tmp = NULL;
 		
@@ -160,7 +157,7 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct,bool tIPv6)
 			if(mTmp) {
 				mServAddr = strdup(mTmp);
 				free(mTmp);
-				LogStream() << "freeing tmp of mServAddrs" << endl;
+				LogStream() << "freeing tmp of mServAddrs" << endl;//probaly not need later?
 			}
 			
 			mServPort =  ntohs(((sockaddr_in*)&saddr)->sin_port);
@@ -194,11 +191,12 @@ cAsyncConn::cAsyncConn(const string &host, int port, bool udp):
 {
 	mMaxBuffer = MAX_SEND_SIZE;
 	ClearLine();
+	
 	if(udp) {
 		mType = eCT_SERVERUDP;
 		SetupUDP(host, port);
 	}
-	else
+	else 
 		Connect(host,port);
 }
 
@@ -220,15 +218,14 @@ void cAsyncConn::Close()
 	TEMP_FAILURE_RETRY(closesocket(mSockDesc));
 	
 	if(errno != EINTR) {
-		sSocketCounter --;
+		sSocketCounter--;
+		
 		if (Log(3))
 			LogStream() << "Closing socket " << mSockDesc << endl;
 	}
 	else if(ErrLog(1))
 		LogStream() << "Socket not closed" << endl;
-	
-	
-	//mSockDesc = INVALID_SOCKET;//did we even need this?
+
 }
 
 void cAsyncConn::Flush()
@@ -311,7 +308,7 @@ void cAsyncConn::CloseNice(int msec)
 void cAsyncConn::CloseNow()
 {
 	mWritable = false;
-	//closesocket(mSockDesc);
+
 	if(mxServer) {
 		mxServer->mConnChooser.OptOut((cConnBase*)this, eCC_ALL);
 		mxServer->mConnChooser.OptIn((cConnBase*)this, eCC_CLOSE);
@@ -334,18 +331,18 @@ int cAsyncConn::ReadAll()
 			((errno == EAGAIN) || (errno == EINTR))
 			&& (i++ <= 100)
 		)	{
-#if ! defined _WIN32
+//#if ! defined _WIN32
 	    ::usleep(5);
-#endif
+//#endif
 		}
 	} else {
 		while(
 			((buf_len = recvfrom(mSockDesc, msBuffer, MAX_MESS_SIZE, 0, (struct sockaddr *)&mAddrIN, (socklen_t *)&addr_len)) == -1) &&
 			(i++ <= 100)
 		) {
-#if ! defined _WIN32
+//#if ! defined _WIN32
 			::usleep(5);
-#endif
+//#endif
 		}
 	}
 
@@ -386,16 +383,16 @@ int cAsyncConn::SendAll(const char *buf, size_t &len)
 	size_t total = 0;        /* how many bytes we've sent */
 	size_t bytesleft = len; /* how many we have left to send */
 	int n = 0;
-	int repetitions=0;
-	bool udp = (this->GetType() == eCT_SERVERUDP);
+	int repetitions = 0;
+	bool bUDP = (this->GetType() == eCT_SERVERUDP);
 
 #ifndef QUICK_SEND
 	while(total < len) {
 		try {
-			if(!udp) {
-#if ! defined _WIN32
+			if(!bUDP) {
+//#if ! defined _WIN32
 				n = send(mSockDesc, buf + total, bytesleft, MSG_NOSIGNAL|MSG_DONTWAIT);
-#else
+/*#else
 				int RetryCount = 0;
 				do {
 					if ((n = send(mSockDesc, buf + total, (int)bytesleft, 0)) != SOCKET_ERROR)
@@ -407,7 +404,7 @@ int cAsyncConn::SendAll(const char *buf, size_t &len)
 					}
 				}
 				while (WSAGetLastError() == WSAEWOULDBLOCK);
-#endif
+#endif*/
 			} else {
 				n = sendto(mSockDesc, buf + total, bytesleft, 0, (struct sockaddr *)&mAddrIN, sizeof(struct sockaddr));
 			}
@@ -427,7 +424,7 @@ int cAsyncConn::SendAll(const char *buf, size_t &len)
 		bytesleft -= n;
 	}
 #else
-	if(!udp) {
+	if(!bUDP) {
 		n = send(mSockDesc, buf + total, bytesleft, 0);
 	}
 	else
@@ -435,7 +432,7 @@ int cAsyncConn::SendAll(const char *buf, size_t &len)
 	total = n;
 #endif
 	len = total; /* return number actually sent here */
-	return n == -1?-1:0; /* return -1 on failure, 0 on success */
+	return n == -1 ? -1 : 0; /* return -1 on failure, 0 on success */
 }
 
 int cAsyncConn::SetupUDP(const string &host, int port)
@@ -508,20 +505,20 @@ int cAsyncConn::Connect(const string &host, int port)
 
 int cAsyncConn::SetSockOpt(int optname, const void *optval, int optlen)
 {
-#ifndef _WIN32
+//#ifndef _WIN32
 	return setsockopt(this->mSockDesc, SOL_SOCKET, optname, optval , optlen);
-#else
-	return 0;
-#endif
+//#else
+//	return 0;
+//#endif
 }
 
 int cAsyncConn::GetSockOpt(int optname, void *optval, int &optlen)
 {
 	int result = 0;
-#ifndef _WIN32
+//#ifndef _WIN32
 	socklen_t _optlen;
 	result = getsockopt(this->mSockDesc, SOL_SOCKET, optname, optval , &_optlen);
-#endif
+//#endif
 	return result;
 }
 
@@ -586,7 +583,7 @@ int cAsyncConn::BindSocket(int sockfd, int port,  char *addr,int type)
 	memset(&sin,0,sizeof(sockaddr_in));	
     sin.sin_family = AF_INET;
     sin.sin_port = htons(port);
-    sin.sin_addr.s_addr =  htonl(INADDR_ANY);//listen on any aviable conn
+    sin.sin_addr.s_addr =  htonl(INADDR_ANY); //listen on any aviable conn
     
     
     if (bind(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
@@ -614,17 +611,17 @@ tSocket cAsyncConn::NonBlockSock(int sock)
 {
 	if(sock < 0)
 		return INVALID_SOCKET;
-#if !defined _WIN32
+//#if !defined _WIN32
 	int flags;
 	if((flags = fcntl(sock, F_GETFL, 0)) < 0)
 		return INVALID_SOCKET;
 	if( fcntl(sock, F_SETFL, flags | O_NONBLOCK) < 0 )
 		return INVALID_SOCKET;
-#else
-	unsigned long one = 1;
-	if(SOCKET_ERROR == ioctlsocket(sock, FIONBIO, &one))
-		return INVALID_SOCKET;
-#endif
+//#else
+//	unsigned long one = 1;
+//	if(SOCKET_ERROR == ioctlsocket(sock, FIONBIO, &one))
+//		return INVALID_SOCKET;
+//#endif
 	return sock;
 }
 //true if fail
@@ -634,7 +631,6 @@ int cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv
 		return INVALID_SOCKET;
 	mSockDesc = CreateSock(udp,ipv6);//this is fine seems
 	if(!(mSockDesc >= 0)) {
-		//printf("Error on create");
 		LogStream() << "error create" << mSockDesc << endl;
 		return INVALID_SOCKET;
 	}	
@@ -650,7 +646,6 @@ int cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv
 	{
 		mSockDesc = BindSocketV6(mSockDesc,port,udp ? SOCK_DGRAM : SOCK_STREAM);
 		if(!(mSockDesc >= 0)) {
-			//printf("Error on bind for IPv6");
 			LogStream() << "Error on bind for IPv6" << mSockDesc << endl;
 			return INVALID_SOCKET;	
 		}	
@@ -659,14 +654,12 @@ int cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv
 	if(!udp) {
 	    mSockDesc = ListenSock(mSockDesc);
 		if(!(mSockDesc >= 0)) {
-			//printf("Error on bind");
 			LogStream() << "Error on bind for IPv4" << mSockDesc << endl;
 			return INVALID_SOCKET;
 		}
 	    
 	    mSockDesc = NonBlockSock(mSockDesc);
 			if(!(mSockDesc >= 0)) {
-				//printf("Error on bind");
 				LogStream() << "Error on NonBlockSock Set" << mSockDesc << endl;
 				return INVALID_SOCKET;	
 			}	
@@ -689,37 +682,38 @@ tSocket cAsyncConn::AcceptSock()
 	namelen = sizeof(client);
 	memset(&client, 0, namelen);
 
-	#if ! defined _WIN32
+//	#if ! defined _WIN32
 		tSocket socknum = ::accept(mSockDesc, (struct sockaddr *)&client, &namelen);
-	#else
-		tSocket socknum = accept(mSockDesc, (struct sockaddr *)&client, &namelen);
-	#endif
+//	#else
+//		tSocket socknum = accept(mSockDesc, (struct sockaddr *)&client, &namelen);
+//	#endif
 
 	while(( socknum == INVALID_SOCKET) && ((errno == EAGAIN) || (errno == EINTR)) && (i++ < 10)) {
-		#if ! defined _WIN32
+		//#if ! defined _WIN32
 		socknum = ::accept(mSockDesc, (struct sockaddr *)&client, (socklen_t*)&namelen);
-		#else
-   		socknum = accept(mSockDesc, (struct sockaddr *)&client, &namelen);
-		#endif
+		//#else
+   		//socknum = accept(mSockDesc, (struct sockaddr *)&client, &namelen);
+		//#endif
 
-		#if ! defined _WIN32
+		//#if ! defined _WIN32
 		::usleep(50);
-		#else
-		::Sleep(1);
-		#endif
+		//#else
+		//::Sleep(1);
+		//#endif
 	}
 
 	if(socknum == INVALID_SOCKET) {
-		#ifdef _WIN32
-		vhErr(1) << WSAGetLastError() << "  " << sizeof(fd_set) << endl;
-		#endif
+		//#ifdef _WIN32
+		//vhErr(1) << WSAGetLastError() << "  " << sizeof(fd_set) << endl;
+		//#endif
+		vhErr(1) << "Err no" << errno << endl;
 		return INVALID_SOCKET;
 	}
 	if(Log(3))
 		LogStream() << "Accepted Socket " << socknum << endl;
 	sSocketCounter++;
 
-#ifndef _WIN32
+//#ifndef _WIN32
 	if(setsockopt(socknum, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(int)) == SOCKET_ERROR) {
 		TEMP_FAILURE_RETRY(closesocket(socknum));
 		if(errno != EINTR) {
@@ -730,7 +724,7 @@ tSocket cAsyncConn::AcceptSock()
 			LogStream() << "Socket not closed" << endl;
 		return INVALID_SOCKET;
 	}
-#endif
+//#endif
 	if((socknum = NonBlockSock(socknum)) == INVALID_SOCKET)
 		return INVALID_SOCKET;
 
@@ -999,12 +993,12 @@ bool cAsyncConn::DNSResolveReverse(const string &ip, string &host)
 {
 	struct hostent *hp;
 	struct in_addr addr;
-#ifndef _WIN32
+//#ifndef _WIN32
 	if(!inet_aton(ip.c_str(), &addr))
 		return false;
-#else
-	addr.s_addr = inet_addr(ip.c_str());
-#endif
+//#else
+//	addr.s_addr = inet_addr(ip.c_str());
+//#endif
 	if((hp = gethostbyaddr((char *)&addr,sizeof(addr),AF_UNSPEC)))
 		host=hp->h_name;
 	return hp != NULL;

@@ -24,6 +24,7 @@
 // buffer sizes
 #define MAX_MESS_SIZE			524288		// 0,50 mb, maximum size of read buffer
 #define MAX_SEND_SIZE			2097152		// 2,00 mb, maximum size of user output buffer
+
 #define MAX_SEND_FILL_SIZE		1310720		// 1,25 mb, on this level incoming data is blocked
 #define MAX_SEND_UNBLOCK_SIZE	1835008		// 1,75 mb, under this level its unblocked again
 
@@ -31,9 +32,11 @@
 #include "ctime.h"
 #include "cconnbase.h"
 #include "cprotocol.h"
+
 #ifndef _WIN32
 #include <netinet/in.h>
 #endif
+
 #include <string>
 #include <list>
 
@@ -146,7 +149,7 @@ namespace nVerliHub {
 				 * @param ct The type of connection. See tConnType for more information.
 				 * @see tConnType
 				 */
-				cAsyncConn(int sd=0, cAsyncSocketServer *s=NULL, tConnType ct= nEnums::eCT_CLIENT,bool mIPv6 = false);
+				cAsyncConn(int sd = 0, cAsyncSocketServer *s = NULL, tConnType ct= nEnums::eCT_CLIENT , bool mIPv6 = false);
 
 				/**
 				 * Class constructor.
@@ -462,7 +465,7 @@ namespace nVerliHub {
 					return mSockDesc;
 				}
 				
-				/**/
+				/* compare & return sock desc (wich is numbers)*/
 				bool operator==(cAsyncConn* rts)
 				{
 					return rts->mSockDesc == mSockDesc;
@@ -591,7 +594,7 @@ namespace nVerliHub {
 				 * @param udp True if the connection is UDP one. Default to TCP.
 				 * @return A negative value indicates that the connection is not created.
 				 */
-				tSocket CreateSock(bool udp=false,bool ipv6=false);
+				tSocket CreateSock(bool udp = false , bool ipv6 = false);
 
 				/**
 				 * Return a pointer to an instance of connection factory

@@ -19,11 +19,11 @@
 */
 
 #include "casyncsocketserver.h"
-#if defined _WIN32
-#  include <Winsock2.h>
-#else
-#  include <sys/socket.h>
-#endif
+//#if defined _WIN32
+//#  include <Winsock2.h>
+//#else
+#include <sys/socket.h>
+//#endif
 #include <unistd.h>
 #include <stdio.h>
 #include <algorithm>
@@ -54,7 +54,7 @@ cAsyncSocketServer::cAsyncSocketServer(int port):
 	mRunResult(0),
 	mNowTreating(NULL)
 {
-	#ifdef _WIN32
+	/*#ifdef _WIN32
 	if(!this->WSinitialized) {
 
 		WORD wVersionRequested;
@@ -67,8 +67,8 @@ cAsyncSocketServer::cAsyncSocketServer(int port):
 		if(err != 0) {
 			/* Tell the user that we could not find a usable */
 			/* WinSock DLL.                                  */
-			return;
-		}
+	//		return;
+	//	}
 
 		/*
 		 * Confirm that the WinSock DLL supports 2.2.
@@ -77,26 +77,26 @@ cAsyncSocketServer::cAsyncSocketServer(int port):
 		 * 2.2 in wVersion since that is the version we
 		 * requested.
 		 */
-		if(LOBYTE( wsaData.wVersion ) != 2 ||  HIBYTE( wsaData.wVersion ) != 2) {
+	//	if(LOBYTE( wsaData.wVersion ) != 2 ||  HIBYTE( wsaData.wVersion ) != 2) {
 			/* Tell the user that we could not find a usable
 			 * WinSock DLL.
 			 */
-			WSACleanup();
-			return;
-		}
+	//		WSACleanup();
+	//		return;
+	//	}
 
 		// The WinSock DLL is acceptable. Proceed.
-		this->WSinitialized = true;
-	}
-	#endif
+	//	this->WSinitialized = true;
+	//}
+	//#endif
 }
 
 cAsyncSocketServer::~cAsyncSocketServer()
 {
 	close();
-	#ifdef _WIN32
+	/*#ifdef _WIN32
 	WSACleanup();
-	#endif
+	#endif*/
 	vhLog(2) << "Allocated objects: " << cObj::GetCount() << endl;
 	vhLog(2) << "Unclosed sockets: " << cAsyncConn::sSocketCounter << endl;
 }
@@ -118,11 +118,11 @@ int cAsyncSocketServer::run()
 			OnTimerBase(mTime);
 		}
 
-		#if !defined _WIN32
+		//#if !defined _WIN32
 			::usleep(mStepDelay * 1000);
-		#else
-			::Sleep(mStepDelay);
-		#endif
+		//#else
+		//	::Sleep(mStepDelay);
+		//#endif
 
 		mFrequency.Insert(mTime);
 
@@ -154,7 +154,7 @@ void cAsyncSocketServer::close()
 		if (*it) {
 			mConnChooser.DelConn(*it);
 
-			if (mFactory != NULL) {
+			if (mFactory) {
 				mFactory->DeleteConn(*it);
 			} else {
 				delete (*it);
@@ -190,7 +190,7 @@ void cAsyncSocketServer::addConnection(cAsyncConn *new_conn)
 	mConnChooser.AddConn(new_conn);
 
 	mConnChooser.cConnChoose::OptIn((cConnBase *)new_conn, tChEvent(eCC_INPUT | eCC_ERROR));
-	tCLIt it = mConnList.insert(mConnList.begin(),new_conn);
+	tCLIt it = mConnList.insert(mConnList.begin(), new_conn);
 
 	new_conn->mIterator = it;
 	if(0 > OnNewConn(new_conn))
@@ -239,7 +239,7 @@ void cAsyncSocketServer::delConnection(cAsyncConn *old_conn)
 
 	old_conn->mIterator = emptyit;
 
-	if (old_conn->mxMyFactory != NULL)
+	if (old_conn->mxMyFactory)
 		old_conn->mxMyFactory->DeleteConn(old_conn);
 	else
 		delete old_conn;
@@ -326,11 +326,11 @@ void cAsyncSocketServer::TimeStep()
 	{
 		int n = mConnChooser.Choose(tmout);
 		if(!n) {
-			#if ! defined _WIN32
+			//#if ! defined _WIN32
 			::usleep(50);
-			#else
-			::Sleep(0);
-			#endif
+			//#else
+			//::Sleep(0);
+			//#endif
 			return;
 		}
 	}
@@ -347,16 +347,16 @@ void cAsyncSocketServer::TimeStep()
 		mNowTreating = (cAsyncConn* )res.mConn;
 		cAsyncConn *conn = mNowTreating;
 		int activity = res.mRevent;
-		bool OK = false;
+		bool bOK = false;
 		if(conn)
-		   OK = conn->getok();
+		   bOK = conn->getok();
 
 		if(!mNowTreating)
 			continue;
 		// Some connections may have been disabled during this loop so skip them
-		if(OK && (activity & eCC_INPUT) && conn->GetType() == eCT_LISTEN) {
-			// Cccept incoming connection
-			int i=0;
+		if(bOK && ( (activity & eCC_INPUT) == eCC_INPUT ) && conn->GetType() == eCT_LISTEN) {
+			// Accept incoming connection
+			int i = 0;
 			cAsyncConn *new_conn = NULL;
 			do {
 
@@ -365,36 +365,36 @@ void cAsyncSocketServer::TimeStep()
 				if(new_conn) addConnection(new_conn);
 				i++;
 			} while(new_conn && i <= 101);
-#ifdef _WIN32
-			vhLog(1) << "num connections" << mConnChooser.mConnList.size() << endl;
-#endif
+//#ifdef _WIN32
+//			vhLog(1) << "num connections" << mConnChooser.mConnList.size() << endl;
+//#endif
 
 		}
-		if(OK && (activity & eCC_INPUT)  &&
+		if(bOK && ( (activity & eCC_INPUT) == eCC_INPUT ) &&
 			((conn->GetType() == eCT_CLIENT) || (conn->GetType() == eCT_CLIENTUDP)))
 			// Data to be read or data in buffer
 		{
 			if(input(conn) <= 0)
-				OK = false;
+				bOK = false;
 		}
-		if(OK && (activity & eCC_OUTPUT)) {
+		if(bOK && ((activity & eCC_OUTPUT) == eCC_OUTPUT)) {
 			// NOTE: in sockbuf::write is a bug, missing buf increment, it will block until whole buffer is sent
 			output(conn);
 		}
 		mNowTreating = NULL;
-		if(!OK || (activity & (eCC_ERROR | eCC_CLOSE))) {
+		if(!bOK || ( (activity & (eCC_ERROR | eCC_CLOSE))==(eCC_ERROR | eCC_CLOSE) )) {
 
 			delConnection(conn);
 		}
 	}
 }
 
-pair<cAsyncConn *,cAsyncConn*> cAsyncSocketServer::Listen(int OnPort, bool UDP)
+pair<cAsyncConn *,cAsyncConn*> cAsyncSocketServer::Listen(int OnPort, bool bUDP)
 {
 	cAsyncConn *ListenSock;
 	cAsyncConn* ListenSock6;
 
-	if(!UDP) {
+	if(!bUDP) {
 		ListenSock = new cAsyncConn(0, this, eCT_LISTEN);
 		ListenSock6 = new cAsyncConn(0, this, eCT_LISTEN, true);
 		
@@ -403,9 +403,10 @@ pair<cAsyncConn *,cAsyncConn*> cAsyncSocketServer::Listen(int OnPort, bool UDP)
 		ListenSock6 = new cAsyncConn(0, this, eCT_CLIENTUDP, true);
 	}
 	
-	if(this->ListenWithConn(ListenSock, OnPort, UDP) == NULL )
+	if(this->ListenWithConn(ListenSock, OnPort, bUDP) == NULL )
 		LogStream() << "Error with IPv4";
-	if(this->ListenWithConn(ListenSock6, OnPort, UDP,true) == NULL)
+		
+	if(this->ListenWithConn(ListenSock6, OnPort, bUDP,true) == NULL)
 		LogStream() << "Error with IPv6";
 	
 	return make_pair(ListenSock,ListenSock6);
@@ -418,7 +419,7 @@ int cAsyncSocketServer::StartListening(int OverrideDefaultPort)
 		mPort = OverrideDefaultPort;
 	if(mPort && !OverrideDefaultPort)
 		OverrideDefaultPort = mPort;
-		// ipv4/ipv6
+	// ipv4/ipv6
 	pair<cAsyncConn*, cAsyncConn*> mIsOk = this->Listen(OverrideDefaultPort, false);
 	
 	if(mIsOk.first != NULL && mIsOk.second != NULL)
@@ -426,30 +427,28 @@ int cAsyncSocketServer::StartListening(int OverrideDefaultPort)
 	return -1;
 }
 
-cAsyncConn * cAsyncSocketServer::ListenWithConn(cAsyncConn *ListenSock, int OnPort, bool UDP, bool ipv6)
+void cAsyncSocketServer::LogOnListen(std::string& mess, int OnPort, bool bipv6 , bool bUDP)
+{
+	if(Log(0))
+	{
+		LogStream() << mess << (bipv6 ? "["+mAddr6+"]:" : mAddr) << OnPort << (bUDP ? " UDP":" TCP" ) << endl;
+	}
+	
+}	
+
+cAsyncConn * cAsyncSocketServer::ListenWithConn(cAsyncConn *ListenSock, int OnPort, bool bUDP, bool bipv6)
 {
 	if(ListenSock != NULL) {
-		if(ListenSock->ListenOnPort(OnPort, ipv6 ? (const_cast<char*>(mAddr6.c_str())) : (const_cast<char*>(mAddr.c_str())), UDP,ipv6) == INVALID_SOCKET) {
-			if(Log(0)) {
-				if(!ipv6)
-					LogStream() << "Cannot listen on " << mAddr << ":" << OnPort << (UDP ? " UDP":" TCP") << endl;
-				if(ipv6)
-					LogStream() << "Cannot listen on [" << mAddr6 << "]:" << OnPort << (UDP ? " UDP":" TCP") << endl;
-				
-				LogStream() << "Please make sure the port is open and not already used by another process" << endl;
-			}
+		if(ListenSock->ListenOnPort(OnPort, bipv6 ? (const_cast<char*>(mAddr6.c_str())) : (const_cast<char*>(mAddr.c_str())), bUDP,bipv6) == INVALID_SOCKET) {
+			LogOnListen("Can not listen on " , OnPort, bipv6 ,bUDP );
+			LogStream() << "Please make sure the port is open and not already used by another process" << endl;
 		}
 		this->mConnChooser.AddConn(ListenSock);
 		this->mConnChooser.cConnChoose::OptIn(
 			(cConnBase *)ListenSock,
 			tChEvent(eCC_INPUT|eCC_ERROR));
 		
-		if(!ipv6) {	
-			if(Log(0)) LogStream() << "Listening for connections on " << mAddr << ":" << OnPort << (UDP?" UDP":" TCP") << endl;
-		}
-		if(ipv6) {
-			if(Log(0)) LogStream() << "Listening for connections on [" << mAddr6 << "]:" << OnPort << (UDP?" UDP":" TCP") << endl;
-		}	
+		LogOnListen("Listen for Connection on " , OnPort ,bipv6 ,bUDP );	
 		return ListenSock;
 	}
 	return NULL;

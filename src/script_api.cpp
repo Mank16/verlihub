@@ -405,6 +405,10 @@ const char *GetUserIP(const char *nick)
 	if (!usr || !usr->mxConn) {
 		return "";
 	} else {
+		if(!usr->mxConn->AddrIPv6().empty())
+		{
+			return usr->mxConn->AddrIPv6().c_str();
+		}
 		return usr->mxConn->AddrIP().c_str();
 	}
 }

@@ -484,7 +484,12 @@ int cDCProto::DC_Supports(cMessageDC *msg, cConnDC *conn)
 		{
 			conn->mFeatures |= eSF_IP4;
 			pars.append("IP64 ");
+		} else if(feature == "IPv4") {
+			pars.append("IPv4")
+			//Create_ConnectToMe(,,,StringFrom();
+			//conn->send(otmsg,true);
 		}
+		
 		
 	}
 
