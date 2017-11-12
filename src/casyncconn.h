@@ -141,7 +141,8 @@ namespace nVerliHub {
 
 				/// Define an iterator to a list of connections.
 				typedef tConnList::iterator tCLIt;
-
+				//res of ifup
+				std::vector<std::string> res ,res_iv6;
 				/**
 				 * Class constructor.
 				 * @param sd Socket identifier of the connection.

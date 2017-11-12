@@ -118,10 +118,9 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct, bool tIPv6
 			mAddrIP6 = ipstr;
 		}
 
-		//IP addr local? did we need it?
-		/*struct ifaddrs *ifaddr= NULL,*ifa = NULL;
+		//ifup local
+		struct ifaddrs *ifaddr= NULL,*ifa = NULL;
 		void *tmp = NULL;
-		
 		getifaddrs(&ifaddr);
 		for(ifa = ifaddr;ifa!= NULL;ifa = ifa->ifa_next)
 		{
@@ -133,17 +132,17 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct, bool tIPv6
 				tmp = &((struct sockaddr_in*)ifa->ifa_addr)->sin_addr;
 				char address[INET_ADDRSTRLEN];
 				inet_ntop(AF_INET,tmp,address, INET_ADDRSTRLEN);
-				mAddrIP = address;
+				res.push_back(address);
 			}
 			else if(ifa->ifa_addr->sa_family == AF_INET6)
 			{
 				tmp = &((struct sockaddr_in6*)ifa->ifa_addr)->sin6_addr;
 				char address[INET_ADDRSTRLEN];
 				inet_ntop(AF_INET6,tmp,address, INET_ADDRSTRLEN);
-				mAddrIP6 = address;
+				res_iv6.push_back(address);
 			}	
 			
-		}*/
+		}
 		
 		if(mxServer && mxServer->mUseDNS) // host name
 			DNSLookup();
