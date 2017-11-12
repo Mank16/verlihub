@@ -523,7 +523,8 @@ int cDCProto::DC_Supports(cMessageDC *msg, cConnDC *conn)
 	}
 	
 	if( (conn->mFeatures & eSF_IP4) == eSF_IP4) { // send ConnectToMe
-		Create_ConnectToMe(omsg,conn->mMyNick,conn->res.at(0),StringFrom(conn->mServPort),"");
+		//1 'cos 0 == localhost
+		Create_ConnectToMe(omsg,conn->mMyNick,conn->res.at(1),StringFrom(conn->mServPort),"");
 		conn->Send(omsg,true);
 	}
 	conn->SetLSFlag(eLS_SUPPORTS);
