@@ -137,6 +137,7 @@ namespace nVerliHub {
 			eSF_SALTPASS = 1 << 28,
 			eSF_NICKRULE = 1 << 29 ,
 			eSF_IP4 = 1 << 30,
+			eSF_IP64 = 1 << 31,
 			
 		} tSupportFeature;
 

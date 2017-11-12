@@ -482,12 +482,11 @@ int cDCProto::DC_Supports(cMessageDC *msg, cConnDC *conn)
 		
 		else if(feature == "IP64")
 		{
-			conn->mFeatures |= eSF_IP4;
+			conn->mFeatures |= eSF_IP64;
 			pars.append("IP64 ");
 		} else if(feature == "IPv4") {
 			pars.append("IPv4");
-			//Create_ConnectToMe(,,,StringFrom();
-			//conn->send(otmsg,true);
+			conn->mFeatures |= eSF_IP4;
 		}
 		
 		
@@ -522,7 +521,11 @@ int cDCProto::DC_Supports(cMessageDC *msg, cConnDC *conn)
 		Create_NickRule(omsg, pars);
 		conn->Send(omsg, true);
 	}
-
+	
+	if( (conn->mFeatures & eSF_IP4) == eSF_IP4) { // send ConnectToMe
+		Create_ConnectToMe(omsg,conn->mMyNick,conn->mServAddr,conn->mServPort,"");
+		conn->Send(omsg,true);
+	}
 	conn->SetLSFlag(eLS_SUPPORTS);
 	return 0;
 }
