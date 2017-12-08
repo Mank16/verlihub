@@ -312,6 +312,7 @@ void cAsyncConn::CloseNow()
 		mxServer->mConnChooser.OptOut((cConnBase*)this, eCC_ALL);
 		mxServer->mConnChooser.OptIn((cConnBase*)this, eCC_CLOSE);
 	}
+	::shutdown(mSockDesc,2);//shutdown sock
 }
 
 int cAsyncConn::ReadAll()
