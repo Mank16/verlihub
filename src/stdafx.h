@@ -18,3 +18,4 @@
 	of the GNU General Public License.
 */
 
+#include <stdint.h>
