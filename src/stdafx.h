@@ -17,6 +17,6 @@
 	Please see http://www.gnu.org/licenses/ for a copy
 	of the GNU General Public License.
 */
-
+#include <unistd.h>
 #include <stdint.h>
 #include <inttypes.h>

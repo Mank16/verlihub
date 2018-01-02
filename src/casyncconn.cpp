@@ -32,7 +32,7 @@
 
 #include "casyncconn.h"
 #include "cprotocol.h"
-
+#include <unistd.h>
 #include <ifaddrs.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>        /* for sockaddr_in */
@@ -42,7 +42,7 @@
 	
 inline int closesocket(int s)
 {
-	return close(s);
+	return ::close(s);
 }	
 
 #include <unistd.h>
