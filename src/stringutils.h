@@ -21,6 +21,8 @@
 #ifndef STRINGUTILS_H
 #define STRINGUTILS_H
 #include <string>
+#include <stdint.h>
+
 
 using namespace std;
 namespace nVerliHub {

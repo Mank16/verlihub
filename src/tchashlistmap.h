@@ -23,6 +23,8 @@
 #include <list>
 #include <map>
 #include <string>
+#include <stdint.h>
+
 #include "cobj.h"
 
 using namespace std;

@@ -23,6 +23,7 @@
 #include "cdccommand.h"
 #include "ccommandcollection.h"
 #include "i18n.h"
+#include <stdint.h>
 
 namespace nVerliHub {
 	namespace nSocket {

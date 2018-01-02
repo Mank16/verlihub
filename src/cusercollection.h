@@ -20,19 +20,7 @@
 
 #ifndef NDIRECTCONNECTCUSERCOLLECTION_H
 #define NDIRECTCONNECTCUSERCOLLECTION_H
-#if defined _WIN32
-namespace std {
-	inline unsigned long _Atomic_swap(unsigned long * __p, unsigned long __q)
-	{
-    		// __gthread_mutex_lock(&_Swap_lock_struct<0>::_S_swap_lock);
-    		unsigned long __result = *__p;
-    		*__p = __q;
-    		// __gthread_mutex_unlock(&_Swap_lock_struct<0>::_S_swap_lock);
-    		return __result;
-	}
-};
-#endif
-
+#include <stdint.h>
 #include <string>
 #include <functional>
 #include "thasharray.h"

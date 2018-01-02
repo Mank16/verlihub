@@ -21,6 +21,7 @@
 #ifndef NCONFIGTMYSQLMEMORYORDLIST_H
 #define NCONFIGTMYSQLMEMORYORDLIST_H
 #include "tmysqlmemorylist.h"
+#include <stdint.h>
 
 namespace nVerliHub {
 	using namespace nUtils;

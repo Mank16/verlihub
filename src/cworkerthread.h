@@ -22,6 +22,7 @@
 #define NTHREADSCWORKERTHREAD_H
 #include "cthread.h"
 #include "cthreadwork.h"
+#include <stdint.h>
 
 namespace nVerliHub {
 	namespace nThread {

@@ -23,6 +23,7 @@
 #include "thasharray.h"
 #include "cconfmysql.h"
 #include "ctime.h"
+#include <stdint.h>
 
 namespace nVerliHub {
 	namespace nConfig {

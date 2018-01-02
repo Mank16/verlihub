@@ -21,6 +21,8 @@
 #ifndef CUSER_H
 #define CUSER_H
 #include <string>
+#include <stdint.h>
+
 #include "cobj.h"
 #include "cconndc.h"
 #include "cfreqlimiter.h"

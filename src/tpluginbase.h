@@ -21,6 +21,7 @@
 #ifndef NPLUGINTPLUGINBASE_H
 #define NPLUGINTPLUGINBASE_H
 #include <string>
+#include <stdint.h>
 #include "cobj.h"
 
 using std::string;

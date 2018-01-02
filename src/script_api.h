@@ -23,6 +23,7 @@
 
 #include <map>
 #include <string>
+#include <stdint.h>
 #include "cvhplugin.h"
 
 using namespace std;

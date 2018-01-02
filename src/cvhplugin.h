@@ -23,6 +23,7 @@
 #include "cpluginbase.h"
 #include "cusercollection.h"
 #include <vector>
+#include <stdint.h>
 
 using namespace std;
 namespace  nVerliHub {

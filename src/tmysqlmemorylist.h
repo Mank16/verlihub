@@ -21,6 +21,8 @@
 #ifndef TMYSQLMEMORYLIST_H
 #define TMYSQLMEMORYLIST_H
 #include <vector>
+#include <stdint.h>
+
 #include "cconfmysql.h"
 #ifdef HAVE_CONFIG_H
 #include <config.h>

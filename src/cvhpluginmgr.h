@@ -23,6 +23,7 @@
 #include "cpluginmanager.h"
 #include "ccallbacklist.h"
 #include "cvhplugin.h"
+#include <stdint.h>
 
 namespace nVerliHub {
 	namespace nSocket {

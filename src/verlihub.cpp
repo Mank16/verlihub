@@ -17,7 +17,7 @@
 	Please see http://www.gnu.org/licenses/ for a copy
 	of the GNU General Public License.
 */
-
+#include <stdint.h>
 #include "stdafx.h"
 #ifdef HAVE_CONFIG_H
 #include <config.h>

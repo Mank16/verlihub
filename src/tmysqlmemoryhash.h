@@ -22,6 +22,7 @@
 #define NCONFIGTMYSQLMEMORYHASH_H
 #include "tmysqlmemorylist.h"
 #include "thasharray.h"
+#include <stdint.h>
 
 namespace nVerliHub {
 	using namespace nUtils;

@@ -26,6 +26,9 @@
 #include "tmysqlmemoryordlist.h"
 #include "cserverdc.h"
 
+#include <stdint.h>
+
+
 namespace nVerliHub {
 	using namespace nUtils;
 	namespace nPlugin {

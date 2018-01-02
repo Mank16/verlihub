@@ -22,6 +22,7 @@
 #define NUTILSTHASHARRAY_H
 #include <string.h>
 #include "cobj.h"
+#include <stdint.h>
 
 namespace nVerliHub {
 	namespace nUtils {
