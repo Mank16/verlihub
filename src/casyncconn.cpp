@@ -42,7 +42,7 @@
 	
 inline int closesocket(int s)
 {
-	return ::close(s);
+	return close(s);
 }	
 
 #include <unistd.h>

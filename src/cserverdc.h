@@ -20,6 +20,8 @@
 
 #ifndef CSERVERDC_H
 #define CSERVERDC_H
+#include <stdint.h>
+#include <inttypes.h>
 #include "casyncsocketserver.h"
 #include "cmysql.h"
 #if defined _WIN32

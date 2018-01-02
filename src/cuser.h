@@ -22,6 +22,7 @@
 #define CUSER_H
 #include <string>
 #include <stdint.h>
+#include <inttypes.h>
 
 #include "cobj.h"
 #include "cconndc.h"
