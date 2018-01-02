@@ -117,7 +117,7 @@ DefineAddMethods(unsigned);
 DefineAddMethods(long);
 DefineAddMethods(unsigned long);
 DefineAddMethods(int64_t);
-DefineAddMethods(unsigned int64_t);
+DefineAddMethods(uint64_t);
 DefineAddMethods(string);
 DefineAddMethods(char *);
 DefineAddMethods(double);

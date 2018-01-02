@@ -41,7 +41,7 @@ public:
 	string mOp;
 	bool mIsDrop;
 	string mHost;
-	unsigned int64_t mShare;
+	uint64_t mShare;
 };
 
 	}; // namespace nTables

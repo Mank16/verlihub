@@ -20,8 +20,10 @@
 
 #ifndef CSERVERDC_H
 #define CSERVERDC_H
+#include <unistd.h>
 #include <stdint.h>
 #include <inttypes.h>
+
 #include "casyncsocketserver.h"
 #include "cmysql.h"
 #if defined _WIN32
@@ -801,7 +803,7 @@ public:
 	unsigned int mProtoCount[nEnums::eDC_UNKNOWN + 2]; // last is ping
 
 	// protocol total download = 0 and upload = 1
-	unsigned int64_t mProtoTotal[2];
+	uint64_t mProtoTotal[2];
 
 	// Usercount of zones (CC and IP-range zones)
 	unsigned int mUserCount[USER_ZONES + 1];
@@ -810,9 +812,9 @@ public:
 	// User peak
 	unsigned int mUsersPeak;
 	// Total share of the hub
-	unsigned int64_t mTotalShare;
+	uint64_t mTotalShare;
 	// peak total share
-	unsigned int64_t mTotalSharePeak;
+	uint64_t mTotalSharePeak;
 	// cTime object when the hub was started
 	cTime mStartTime;
 	// Timer that deletes temp bans

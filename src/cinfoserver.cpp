@@ -198,7 +198,7 @@ void cInfoServer::ProtocolInfo(ostream &os)
 
 	cUserCollection::iterator user_iter;
 	cAsyncConn *conn;
-	unsigned int64_t total_buf_up = 0;
+	uint64_t total_buf_up = 0;
 
 	for (user_iter = mServer->mUserList.begin(); user_iter != mServer->mUserList.end(); ++user_iter) {
 		conn = ((cUser*)(*user_iter))->mxConn;

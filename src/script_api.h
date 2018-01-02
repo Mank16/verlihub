@@ -73,7 +73,7 @@ namespace nVerliHub {
 		const char* GetNickList();
 	}
 
-	unsigned int64_t GetTotalShareSize();
+	uint64_t GetTotalShareSize();
 };
 
 #endif

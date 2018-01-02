@@ -131,7 +131,7 @@ namespace nVerliHub {
 				string mHost;
 
 				/// Banned share size.
-				unsigned int64_t mShare;
+				uint64_t mShare;
 
 				/// Lowest IP in banned IP range.
 				unsigned long mRangeMin;

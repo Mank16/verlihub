@@ -1873,7 +1873,7 @@ int cDCProto::DC_ConnectToMe(cMessageDC *msg, cConnDC *conn)
 		return -4;
 	}
 
-	unsigned int64_t use_hub_share = 0; // check use hub share
+	uint64_t use_hub_share = 0; // check use hub share
 
 	switch (conn->mpUser->mClass) {
 		case eUC_NORMUSER:
@@ -2090,7 +2090,7 @@ int cDCProto::DC_RevConnectToMe(cMessageDC *msg, cConnDC *conn)
 		return -4;
 	}
 
-	unsigned int64_t use_hub_share = 0; // check use hub share
+	uint64_t use_hub_share = 0; // check use hub share
 
 	switch (conn->mpUser->mClass) {
 		case eUC_NORMUSER:
@@ -2276,7 +2276,7 @@ int cDCProto::DC_Search(cMessageDC *msg, cConnDC *conn)
 		return -4;
 	}
 
-	unsigned int64_t use_hub_share = 0; // check use hub share
+	uint64_t use_hub_share = 0; // check use hub share
 
 	switch (conn->mpUser->mClass) {
 		case eUC_NORMUSER:
@@ -2488,7 +2488,7 @@ int cDCProto::DCB_BotINFO(cMessageDC *msg, cConnDC *conn)
 	char sep = '$';
 	char pipe = '|';
 	cConnType *ConnType = mS->mConnTypes->FindConnType("default");
-	unsigned int64_t minshare = mS->mC.min_share;
+	uint64_t minshare = mS->mC.min_share;
 
 	if (mS->mC.min_share_use_hub > minshare)
 		minshare = mS->mC.min_share_use_hub;
@@ -2504,7 +2504,7 @@ int cDCProto::DCB_BotINFO(cMessageDC *msg, cConnDC *conn)
 	os << mS->mC.hub_host << sep;
 	os << mS->mC.hub_desc << sep;
 	os << mS->mC.max_users_total << sep;
-	os << StringFrom((unsigned int64_t)(1024 * 1024) * minshare) << sep;
+	os << StringFrom((uint64_t)(1024 * 1024) * minshare) << sep;
 	os << ((ConnType) ? ConnType->mTagMinSlots : 0) << sep;
 	os << mS->mC.tag_max_hubs << sep;
 	os << HUB_VERSION_NAME << " " << HUB_VERSION_VERS << sep;

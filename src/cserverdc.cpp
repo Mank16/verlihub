@@ -1742,7 +1742,7 @@ unsigned int cServerDC::Str2Period(const string &s, ostream &err)
 
 int cServerDC::DoRegisterInHublist(string host, unsigned int port, string reply)
 {
-	unsigned int64_t min_share = mC.min_share; // prepare
+	uint64_t min_share = mC.min_share; // prepare
 
 	if (mC.min_share_use_hub > min_share)
 		min_share = mC.min_share_use_hub;
