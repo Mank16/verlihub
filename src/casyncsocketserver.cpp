@@ -19,11 +19,7 @@
 */
 
 #include "casyncsocketserver.h"
-//#if defined _WIN32
-//#  include <Winsock2.h>
-//#else
 #include <sys/socket.h>
-//#endif
 #include <unistd.h>
 #include <stdio.h>
 #include <algorithm>
@@ -54,49 +50,12 @@ cAsyncSocketServer::cAsyncSocketServer(int port):
 	mRunResult(0),
 	mNowTreating(NULL)
 {
-	/*#ifdef _WIN32
-	if(!this->WSinitialized) {
-
-		WORD wVersionRequested;
-		WSADATA wsaData;
-		int err;
-
-		wVersionRequested = MAKEWORD(2, 2);
-
-		err = WSAStartup(wVersionRequested, &wsaData);
-		if(err != 0) {
-			/* Tell the user that we could not find a usable */
-			/* WinSock DLL.                                  */
-	//		return;
-	//	}
-
-		/*
-		 * Confirm that the WinSock DLL supports 2.2.
-		 * Note that if the DLL supports versions greater
-		 * than 2.2 in addition to 2.2, it will still return
-		 * 2.2 in wVersion since that is the version we
-		 * requested.
-		 */
-	//	if(LOBYTE( wsaData.wVersion ) != 2 ||  HIBYTE( wsaData.wVersion ) != 2) {
-			/* Tell the user that we could not find a usable
-			 * WinSock DLL.
-			 */
-	//		WSACleanup();
-	//		return;
-	//	}
-
-		// The WinSock DLL is acceptable. Proceed.
-	//	this->WSinitialized = true;
-	//}
-	//#endif
+	
 }
 
 cAsyncSocketServer::~cAsyncSocketServer()
 {
 	close();
-	/*#ifdef _WIN32
-	WSACleanup();
-	#endif*/
 	vhLog(2) << "Allocated objects: " << cObj::GetCount() << endl;
 	vhLog(2) << "Unclosed sockets: " << cAsyncConn::sSocketCounter << endl;
 }
@@ -118,11 +77,7 @@ int cAsyncSocketServer::run()
 			OnTimerBase(mTime);
 		}
 
-		//#if !defined _WIN32
-			::usleep(mStepDelay * 1000);
-		//#else
-		//	::Sleep(mStepDelay);
-		//#endif
+		::usleep(mStepDelay * 1000);
 
 		mFrequency.Insert(mTime);
 
@@ -204,7 +159,7 @@ void cAsyncSocketServer::delConnection(cAsyncConn *old_conn)
 
 	if (mNowTreating == old_conn) {
 		//old_conn->ok = false;
-		delete old_conn;
+		delete old_conn; // this should most stuff invalidate
 		return;
 	}
 
@@ -220,7 +175,8 @@ void cAsyncSocketServer::delConnection(cAsyncConn *old_conn)
 	if ((it == mConnList.end()) || (it == emptyit)) {
 		vhErr(1) << "Invalid iterator for connection: " << old_conn << endl;
 		badit = true;
-		//throw "Deleting connection without iterator";
+		if(Log(5))
+			LogStream() << "Deleting connection without iterator" << endl;
 	}
 
 	if (!badit) {
@@ -228,7 +184,8 @@ void cAsyncSocketServer::delConnection(cAsyncConn *old_conn)
 
 		if (found != old_conn) {
 			vhErr(1) << "Connection not found: " << old_conn << endl;
-			throw "Deleting non existing connection";
+			if(Log(5))
+				LogStream() << "Deleting non existing connection" << endl;
 		}
 	}
 
@@ -326,11 +283,7 @@ void cAsyncSocketServer::TimeStep()
 	{
 		int n = mConnChooser.Choose(tmout);
 		if(!n) {
-			//#if ! defined _WIN32
 			::usleep(50);
-			//#else
-			//::Sleep(0);
-			//#endif
 			return;
 		}
 	}
@@ -365,9 +318,6 @@ void cAsyncSocketServer::TimeStep()
 				if(new_conn) addConnection(new_conn);
 				i++;
 			} while(new_conn && i <= 101);
-//#ifdef _WIN32
-//			vhLog(1) << "num connections" << mConnChooser.mConnList.size() << endl;
-//#endif
 
 		}
 		if(bOK && ( (activity & eCC_INPUT) == eCC_INPUT ) &&

@@ -1298,7 +1298,7 @@ bool cServerDC::MinDelayMS(cTime &then, unsigned long min, bool update)
 	cTime now;
 	cTime diff = now - then;
 
-	if (diff.MiliSec() >= (__int64)min) {
+	if (diff.MiliSec() >= (int64_t)min) {
 		then = now;
 		return true;
 	}
@@ -1742,7 +1742,7 @@ unsigned int cServerDC::Str2Period(const string &s, ostream &err)
 
 int cServerDC::DoRegisterInHublist(string host, unsigned int port, string reply)
 {
-	unsigned __int64 min_share = mC.min_share; // prepare
+	unsigned int64_t min_share = mC.min_share; // prepare
 
 	if (mC.min_share_use_hub > min_share)
 		min_share = mC.min_share_use_hub;
@@ -1754,10 +1754,10 @@ int cServerDC::DoRegisterInHublist(string host, unsigned int port, string reply)
 	size_t pos_space;
 	cAsyncConn *pHubList;
 
-	if (reply.size())
+	if (!reply.empty())
 		to_user << _("Hublist registration results") << ":\r\n\r\n";
 
-	while (curhost = "", is >> curhost, curhost.size() > 0) {
+	while (curhost = "", is >> curhost, !curhost.empty() ) {
 		if (reply.size())
 			to_user << autosprintf(_("Sending information to: %s:%d"), curhost.c_str(), port) << " .. ";
 

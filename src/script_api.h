@@ -21,10 +21,6 @@
 #ifndef SCRIPT_API_H
 #define SCRIPT_API_H
 
-#ifndef _WIN32
-#define __int64 long long
-#endif
-
 #include <map>
 #include <string>
 #include "cvhplugin.h"
@@ -76,7 +72,7 @@ namespace nVerliHub {
 		const char* GetNickList();
 	}
 
-	unsigned __int64 GetTotalShareSize();
+	unsigned int64_t GetTotalShareSize();
 };
 
 #endif

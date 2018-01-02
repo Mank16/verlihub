@@ -335,6 +335,8 @@ public:
 	string msg_welcome[11];
 	bool desc_insert_mode;
 	string desc_insert_vars;
+	
+	bool enable_ipv6;
 public: // Public attributes
 	nSocket::cServerDC & mS;
 };

@@ -155,7 +155,7 @@ bool cChatConsole::cfOut::operator()()
 	string msg;
 	GetParStr(3, msg);
 
-	if (msg.size())
+	if (!msg.empty())
 		mChatRoom->SendPMTo(user->mxConn, msg); // todo
 	*/
 
@@ -207,7 +207,7 @@ bool cChatConsole::cfInvite::operator()()
 	string msg;
 	GetParStr(3, msg);
 
-	if (msg.size())
+	if (!msg.empty())
 		mChatRoom->SendPMTo(user->mxConn, msg); // todo
 	*/
 

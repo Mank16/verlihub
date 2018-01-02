@@ -1061,14 +1061,14 @@ int cDCProto::DC_MyINFO(cMessageDC *msg, cConnDC *conn)
 	} else if (str_share.empty() || (str_share[0] == '-')) // missing or negative share
 		str_share = "0";
 
-	__int64 share = 0, shareB = 0;
+	int64_t share = 0, shareB = 0;
 	shareB = StringAsLL(str_share);
 	share = shareB / (1024 * 1024);
 
 	if (theoclass <= eUC_OPERATOR) { // calculate minimum and maximum
-		__int64 min_share = mS->mC.min_share;
-		__int64 max_share = mS->mC.max_share;
-		__int64 min_share_p, min_share_a;
+		int64_t min_share = mS->mC.min_share;
+		int64_t max_share = mS->mC.max_share;
+		int64_t min_share_p, min_share_a;
 
 		if (theoclass == eUC_PINGER)
 			min_share = 0;
@@ -1090,7 +1090,7 @@ int cDCProto::DC_MyINFO(cMessageDC *msg, cConnDC *conn)
 		}
 
 		min_share_a = min_share;
-		min_share_p = (__int64)(min_share * mS->mC.min_share_factor_passive);
+		min_share_p = (int64_t)(min_share * mS->mC.min_share_factor_passive);
 
 		if (conn->mpUser->IsPassive)
 			min_share = min_share_p;
@@ -1114,7 +1114,7 @@ int cDCProto::DC_MyINFO(cMessageDC *msg, cConnDC *conn)
 		}
 
 		if (theoclass <= eUC_VIPUSER) { // second share limit that disables search and download
-			__int64 temp_min_share = 0; // todo: rename to min_share_use_hub_guest
+			int64_t temp_min_share = 0; // todo: rename to min_share_use_hub_guest
 
 			switch (theoclass) {
 				case eUC_NORMUSER:
@@ -1130,7 +1130,7 @@ int cDCProto::DC_MyINFO(cMessageDC *msg, cConnDC *conn)
 
 			if (temp_min_share) {
 				if (conn->mpUser->IsPassive)
-					temp_min_share = (__int64)(temp_min_share * mS->mC.min_share_factor_passive);
+					temp_min_share = (int64_t)(temp_min_share * mS->mC.min_share_factor_passive);
 
 				if (share < temp_min_share) {
 					conn->mpUser->SetRight(eUR_SEARCH, 0);
@@ -1873,7 +1873,7 @@ int cDCProto::DC_ConnectToMe(cMessageDC *msg, cConnDC *conn)
 		return -4;
 	}
 
-	unsigned __int64 use_hub_share = 0; // check use hub share
+	unsigned int64_t use_hub_share = 0; // check use hub share
 
 	switch (conn->mpUser->mClass) {
 		case eUC_NORMUSER:
@@ -2090,7 +2090,7 @@ int cDCProto::DC_RevConnectToMe(cMessageDC *msg, cConnDC *conn)
 		return -4;
 	}
 
-	unsigned __int64 use_hub_share = 0; // check use hub share
+	unsigned int64_t use_hub_share = 0; // check use hub share
 
 	switch (conn->mpUser->mClass) {
 		case eUC_NORMUSER:
@@ -2276,7 +2276,7 @@ int cDCProto::DC_Search(cMessageDC *msg, cConnDC *conn)
 		return -4;
 	}
 
-	unsigned __int64 use_hub_share = 0; // check use hub share
+	unsigned int64_t use_hub_share = 0; // check use hub share
 
 	switch (conn->mpUser->mClass) {
 		case eUC_NORMUSER:
@@ -2488,7 +2488,7 @@ int cDCProto::DCB_BotINFO(cMessageDC *msg, cConnDC *conn)
 	char sep = '$';
 	char pipe = '|';
 	cConnType *ConnType = mS->mConnTypes->FindConnType("default");
-	unsigned __int64 minshare = mS->mC.min_share;
+	unsigned int64_t minshare = mS->mC.min_share;
 
 	if (mS->mC.min_share_use_hub > minshare)
 		minshare = mS->mC.min_share_use_hub;
@@ -2504,7 +2504,7 @@ int cDCProto::DCB_BotINFO(cMessageDC *msg, cConnDC *conn)
 	os << mS->mC.hub_host << sep;
 	os << mS->mC.hub_desc << sep;
 	os << mS->mC.max_users_total << sep;
-	os << StringFrom((unsigned __int64)(1024 * 1024) * minshare) << sep;
+	os << StringFrom((unsigned int64_t)(1024 * 1024) * minshare) << sep;
 	os << ((ConnType) ? ConnType->mTagMinSlots : 0) << sep;
 	os << mS->mC.tag_max_hubs << sep;
 	os << HUB_VERSION_NAME << " " << HUB_VERSION_VERS << sep;

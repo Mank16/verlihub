@@ -43,8 +43,8 @@ class cBasicItemCreator
 		NewItemMethod(int, Int);
 		NewItemMethod(unsigned int, UInt);
 		NewItemMethod(long, Long);
-		NewItemMethod(__int64, Int64);
-		NewItemMethod(unsigned __int64, UInt64);
+		NewItemMethod(int64_t, Int64);
+		NewItemMethod(unsigned int64_t, UInt64);
 		NewItemMethod(unsigned long, ULong);
 		NewItemMethod(char *, PChar);
 		NewItemMethod(string, String);
@@ -151,8 +151,8 @@ class cConfigBase : public cConfigBaseBase
 		DeclareAddMethods(unsigned);
 		DeclareAddMethods(long);
 		DeclareAddMethods(unsigned long);
-		DeclareAddMethods(__int64);
-		DeclareAddMethods(unsigned __int64);
+		DeclareAddMethods(int64_t);
+		DeclareAddMethods(unsigned int64_t);
 		DeclareAddMethods(string);
 		DeclareAddMethods(char *);
 		DeclareAddMethods(double);

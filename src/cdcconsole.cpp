@@ -696,7 +696,7 @@ int cDCConsole::CmdRegMe(istringstream & cmd_line, cConnDC * conn)
 		mOwner->DCPublicHS(_("Registration failed. Please contact an operator for help."), conn);
 		return 1;
 	}
-	__int64 user_share, min_share;
+	int64_t user_share, min_share;
 
 	if(mOwner->mC.autoreg_class >= 0) {
 		if(!conn->mpUser) {
@@ -1592,7 +1592,7 @@ bool cDCConsole::cfBan::operator()()
 				case eBF_SHARE:
 					{
 						istringstream is(Who);
-						__int64 share;
+						int64_t share;
 						is >> share;
 						Ban.mShare = share;
 					}

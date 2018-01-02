@@ -37,7 +37,7 @@ cBanList::cBanList(cServerDC *s):
 	mS(s)
 {
 	mMySQLTable.mName = "banlist";
-	AddCol("ip", "varchar(15)", "", true, mModel.mIP);
+	AddCol("ip", "varchar(40)", "", true, mModel.mIP);
 	AddPrimaryKey("ip");
 	AddCol("nick", "varchar(128)", "", true, mModel.mNick);
 	AddPrimaryKey("nick");

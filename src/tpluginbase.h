@@ -22,9 +22,7 @@
 #define NPLUGINTPLUGINBASE_H
 #include <string>
 #include "cobj.h"
-#ifdef _WIN32
-#include <windows.h>
-#endif
+
 using std::string;
 
 namespace nVerliHub {

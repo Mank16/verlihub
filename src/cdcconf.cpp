@@ -55,13 +55,12 @@ void cDCConf::AddVars()
 	Add("opchat_class", opchat_class, (int)eUC_OPERATOR);
 	Add("hub_host", hub_host, string(""));
 	Add("hub_failover_hosts", hub_failover_hosts, string(""));
-	Add("listen_ip",mS.mAddr,string("0.0.0.0"));
 
-	#if !defined _WIN32
-		Add("listen_port", mS.mPort, 4111);
-	#else
-		Add("listen_port", mS.mPort, 411);
-	#endif
+	Add("enable_ipv6" , enable_ipv6 , true);
+
+	Add("listen_ip",mS.mAddr,string("0.0.0.0"));
+	Add("listen_port", mS.mPort, 4111);
+
 
 	Add("extra_listen_ports", extra_listen_ports,string(""));
 	// End hub info and basic settings

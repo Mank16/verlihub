@@ -22,9 +22,6 @@
 #define COBJ_H
 #include <iostream>
 #include <sstream>
-#ifndef _WIN32
-#define __int64 long long
-#endif
 
 #define vhLog(level) if (Log(level)) LogStream()
 #define vhErr(level) if (ErrLog(level)) LogStream()

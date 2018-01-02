@@ -110,22 +110,8 @@ void ExpandPath(string &Path)
 	if (Path.substr(0, 2) == "./") {
 		string tmp = Path;
 
-		#ifdef _WIN32
-			char *cPath = new char[35];
-			int size = GetCurrentDirectory(35, cPath);
-
-			if (!size) {
-				delete[] cPath;
-				return;
-			} else if (size > 35) {
-				delete[] cPath;
-				cPath = new char[size];
-				GetCurrentDirectory(35, cPath);
-			}
-
-			Path = string(cPath);
-			delete[] cPath;
-		#elif defined HAVE_BSD
+		
+		#if defined HAVE_BSD
 			char *cPath = getcwd(NULL, PATH_MAX);
 			Path = cPath;
 			free(cPath);
@@ -144,13 +130,11 @@ void ExpandPath(string &Path)
 
 	size_t pos;
 
-	#if ! defined _WIN32
-		pos = Path.find("~");
+	pos = Path.find("~");
 
-		if (pos != Path.npos) {
+	if (pos != Path.npos) {
 			Path.replace(pos, 2, getenv("HOME"));
-		}
-	#endif
+	}
 
 	pos = Path.find("../"); // todo: doesnt work on windows
 
@@ -234,14 +218,14 @@ void ReplaceVarInString(const string &src,const string &varname,string &dest, lo
 }
 
 /*!
-    \fn ReplaceVarInString(const string&,const string &varname,string &dest, __int64 by)
+    \fn ReplaceVarInString(const string&,const string &varname,string &dest, int64 by)
  */
-void ReplaceVarInString(const string &src,const string &varname,string &dest, __int64 by)
+void ReplaceVarInString(const string &src,const string &varname,string &dest, int64_t by)
 {
 	ReplaceVarInString(src, varname, dest, StringFrom(by));
 }
 
-string convertByte(__int64 byte, bool UnitSec)
+string convertByte(int64_t byte, bool UnitSec)
 {
 	static const char *byteUnit[] = { _("B"), _("KB"), _("MB"), _("GB"), _("TB"), _("PB"), _("EB"), _("ZB"), _("YB") };
 	static const char *byteSecUnit[] = { _("B/s"), _("KB/s"), _("MB/s"), _("GB/s"), _("TB/s"), _("PB/s"), _("EB/s"), _("ZB/s"), _("YB/s") };
@@ -274,20 +258,16 @@ string convertByte(__int64 byte, bool UnitSec)
 	return os.str();
 }
 
-string StringFrom(__int64 const &ll)
+string StringFrom(int64_t const &ll)
 {
 	char buf[32];
-#ifdef _WIN32
-	sprintf(buf,"%I64d",ll);
-#else
 	sprintf(buf,"%lld",ll);
-#endif
 	return buf;
 }
-__int64 StringAsLL(const string &str)
+int64_t StringAsLL(const string &str)
 {
 #ifdef _WIN32
-	__int64 result;
+	int64_t result;
 	sscanf(str.c_str(),"%I64d",&result);
 	return result;
 #else

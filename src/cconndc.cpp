@@ -20,7 +20,7 @@
 
 #include "cconndc.h"
 #ifdef HAVE_LIBGEOIP
-#include "cgeoip.h"
+	#include "cgeoip.h"
 #endif
 #include "creglist.h"
 #include "creguserinfo.h"

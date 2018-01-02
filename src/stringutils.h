@@ -21,9 +21,6 @@
 #ifndef STRINGUTILS_H
 #define STRINGUTILS_H
 #include <string>
-#if (!defined _WIN32) && (!defined __int64)
-#define __int64  long long
-#endif
 
 using namespace std;
 namespace nVerliHub {
@@ -44,10 +41,10 @@ void ReplaceVarInString(const string &src,const string &var,string &dest, const 
 void ReplaceVarInString(const string &src,const string &var,string &dest, double by);
 void ReplaceVarInString(const string &src,const string &var,string &dest, int by);
 void ReplaceVarInString(const string &src,const string &var,string &dest, long by);
-void ReplaceVarInString(const string &src,const string &var,string &dest, __int64 by);
-string convertByte(__int64 byte, bool UnitSec = false);
-string StringFrom(__int64 const &ll);
-__int64 StringAsLL(const string &);
+void ReplaceVarInString(const string &src,const string &var,string &dest, int64_t by);
+string convertByte(int64_t byte, bool UnitSec = false);
+string StringFrom(int64_t const &ll);
+int64_t StringAsLL(const string &);
 unsigned int CountLines(const string &);
 bool LimitLines(const string &str, int max);
 string StrByteList(const string &data, const string &sep = " ");

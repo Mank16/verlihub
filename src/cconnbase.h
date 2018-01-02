@@ -24,14 +24,9 @@
 namespace nVerliHub {
 	namespace nSocket {
 
-#if !defined _WIN32
 	typedef int tSocket;
 	#define INVALID_SOCKET -1
 	#define SOCKET_ERROR -1
-#else
-	#include <winsock2.h>
-	typedef SOCKET tSocket;
-#endif
 
 /** a Base class for cConnChoose Usage - for connections
 	provides pure virtual conversion to a tSocket (int or SOCKET) type

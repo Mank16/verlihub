@@ -24,10 +24,6 @@
 #include <iostream>
 
 using namespace std;
-#ifndef _WIN32
-#define __int64 long long
-#endif
-
 
 /**
  * a Typed template for a config Item, provides all the methods for convetiong with string, affecting values, ans streaming
@@ -121,8 +117,8 @@ public:
 	DeclarecConfigItemBaseT(double, nEnums::eIT_DOUBLE,Double);
 	DeclarecConfigItemBaseT(char*, nEnums::eIT_PCHAR,PChar);
 	DeclarecConfigItemBaseT(string, nEnums::eIT_STRING,String);
-	DeclarecConfigItemBaseT(__int64, nEnums::eIT_LLONG,Int64);
-	DeclarecConfigItemBaseT(unsigned __int64, nEnums::eIT_ULLONG, UInt64);
+	DeclarecConfigItemBaseT(int64_t, nEnums::eIT_LLONG,Int64);
+	DeclarecConfigItemBaseT(unsigned int64_t, nEnums::eIT_ULLONG, UInt64);
 
 	}; // namespace nConfig
 }; // namespace nVerliHub

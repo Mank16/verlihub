@@ -25,6 +25,8 @@
 #ifdef HAVE_LIBGEOIP
 #include <GeoIP.h>
 #include <GeoIPCity.h>
+
+//#include <maxminddb.h>
 #endif
 
 using std::string;

@@ -150,7 +150,7 @@ int cTrigger::DoIt(istringstream &cmd_line, cConnDC *conn, cServerDC &server, bo
 			ReplaceVarInString(buf, "CLASS", buf, uclass);
 			ReplaceVarInString(buf, "CLASSNAME", buf, server.UserClassName(nEnums::tUserCl(uclass)));
 			ReplaceVarInString(buf, "SHARE", buf, convertByte(conn->mpUser->mShare));
-			ReplaceVarInString(buf, "SHARE_EXACT", buf, (__int64)conn->mpUser->mShare); // exact share size
+			ReplaceVarInString(buf, "SHARE_EXACT", buf, (int64_t)conn->mpUser->mShare); // exact share size
 		}
 
 		ReplaceVarInString(buf, "USERS", buf, (int)server.mUserList.Size());

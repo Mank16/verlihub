@@ -21,9 +21,6 @@
 #include "ccallbacklist.h"
 #include "cpluginbase.h"
 #include "cpluginmanager.h"
-#ifdef _WIN32
-#pragma warning( disable : 4355)
-#endif
 
 namespace nVerliHub {
 	namespace nPlugin {

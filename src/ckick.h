@@ -24,10 +24,6 @@
 
 using namespace std;
 
-#if (!defined _WIN32) && (!defined __int64)
-#define __int64 long long
-#endif
-
 namespace nVerliHub {
 	namespace nTables {
 /**this represents kick by ops, has all information, that mey serve to ban
@@ -45,7 +41,7 @@ public:
 	string mOp;
 	bool mIsDrop;
 	string mHost;
-	unsigned __int64 mShare;
+	unsigned int64_t mShare;
 };
 
 	}; // namespace nTables

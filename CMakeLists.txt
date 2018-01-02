@@ -123,6 +123,10 @@ Find_Package(OpenSSL REQUIRED)
 Find_Package(Crypt REQUIRED)
 Find_Package(MySQL REQUIRED)
 Find_Package(ZLIB REQUIRED)
+
+#FIND_LIBRARY(MAXMINDDB libmaxminddb DOC "New GeoIP2)
+
+#keep this?
 Find_Package(GeoIP)
 
 IF(GEOIP_FOUND)

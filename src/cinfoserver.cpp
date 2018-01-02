@@ -198,7 +198,7 @@ void cInfoServer::ProtocolInfo(ostream &os)
 
 	cUserCollection::iterator user_iter;
 	cAsyncConn *conn;
-	unsigned __int64 total_buf_up = 0;
+	unsigned int64_t total_buf_up = 0;
 
 	for (user_iter = mServer->mUserList.begin(); user_iter != mServer->mUserList.end(); ++user_iter) {
 		conn = ((cUser*)(*user_iter))->mxConn;
@@ -233,18 +233,18 @@ void cInfoServer::SystemInfo(ostream &os)
 		os << " [*] " << autosprintf(_("Total processes: %d"), serverInfo.procs) << "\r\n\r\n";
 
 		#if defined (_SC_PHYS_PAGES) && defined (_SC_AVPHYS_PAGES) && defined (_SC_PAGESIZE)
-			os << " [*] " << autosprintf(_("Total RAM: %s"), convertByte((__int64)(sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE))).c_str()) << "\r\n";
-			os << " [*] " << autosprintf(_("Free RAM: %s"), convertByte((__int64)(sysconf(_SC_AVPHYS_PAGES) * sysconf(_SC_PAGESIZE))).c_str()) << "\r\n";
+			os << " [*] " << autosprintf(_("Total RAM: %s"), convertByte((int64_t)(sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE))).c_str()) << "\r\n";
+			os << " [*] " << autosprintf(_("Free RAM: %s"), convertByte((int64_t)(sysconf(_SC_AVPHYS_PAGES) * sysconf(_SC_PAGESIZE))).c_str()) << "\r\n";
 		#else
-			os << " [*] " << autosprintf(_("Total RAM: %s"), convertByte((__int64)(serverInfo.totalram)).c_str()) << "\r\n";
-			os << " [*] " << autosprintf(_("Free RAM: %s"), convertByte((__int64)(serverInfo.freeram)).c_str()) << "\r\n";
+			os << " [*] " << autosprintf(_("Total RAM: %s"), convertByte((int64_t)(serverInfo.totalram)).c_str()) << "\r\n";
+			os << " [*] " << autosprintf(_("Free RAM: %s"), convertByte((int64_t)(serverInfo.freeram)).c_str()) << "\r\n";
 		#endif
 
-		os << " [*] " << autosprintf(_("Shared RAM: %s"), convertByte((__int64)(serverInfo.sharedram)).c_str()) << "\r\n";
-		os << " [*] " << autosprintf(_("RAM in buffers: %s"), convertByte((__int64)(serverInfo.bufferram)).c_str()) << "\r\n\r\n";
+		os << " [*] " << autosprintf(_("Shared RAM: %s"), convertByte((int64_t)(serverInfo.sharedram)).c_str()) << "\r\n";
+		os << " [*] " << autosprintf(_("RAM in buffers: %s"), convertByte((int64_t)(serverInfo.bufferram)).c_str()) << "\r\n\r\n";
 
-		os << " [*] " << autosprintf(_("Total swap: %s"), convertByte((__int64)(serverInfo.totalswap)).c_str()) << "\r\n";
-		os << " [*] " << autosprintf(_("Free swap: %s"), convertByte((__int64)(serverInfo.freeswap)).c_str()) << "\r\n";
+		os << " [*] " << autosprintf(_("Total swap: %s"), convertByte((int64_t)(serverInfo.totalswap)).c_str()) << "\r\n";
+		os << " [*] " << autosprintf(_("Free swap: %s"), convertByte((int64_t)(serverInfo.freeswap)).c_str()) << "\r\n";
 
 		/*
 		struct rusage resourceUsage;

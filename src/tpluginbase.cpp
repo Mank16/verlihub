@@ -19,9 +19,11 @@
 */
 
 #include "tpluginbase.h"
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
 #include <dlfcn.h>
 
 namespace nVerliHub {
@@ -35,11 +37,11 @@ tPluginBase::~tPluginBase()
 
 bool tPluginBase::Open()
 {
-	#ifdef _WIN32
+	/*#ifdef _WIN32
 	mHandle = LoadLibrary(mFileName.c_str());
 	if(mHandle == NULL)
 	#else
-
+*/
 	#ifdef HAVE_FREEBSD
 	/*
 	* Reset dlerror() since it can contain error from previous
@@ -50,7 +52,7 @@ bool tPluginBase::Open()
 
 	mHandle = dlopen(mFileName.c_str(), RTLD_NOW | RTLD_LAZY | RTLD_GLOBAL);
 	if(!mHandle)
-	#endif
+//	#endif
 	{
 		if(ErrLog(1)) LogStream() << "Can't open plugin '" << mFileName << "' because:" << Error() << endl;
 		return false;
@@ -60,11 +62,11 @@ bool tPluginBase::Open()
 
 bool tPluginBase::Close()
 {
-	#ifdef _WIN32
-	if(!FreeLibrary(mHandle))
-	#else
+//	#ifdef _WIN32
+//	if(!FreeLibrary(mHandle))
+//	#else
 	if(dlclose(mHandle))
-	#endif
+//	#endif
 	{
 		if(ErrLog(1)) LogStream() << "Can't close :" << Error() << endl;
 	}
@@ -74,7 +76,7 @@ bool tPluginBase::Close()
 string tPluginBase::Error()
 {
 	const char *error;
-	#ifdef _WIN32
+/*	#ifdef _WIN32
 		LPVOID buff;
 		FormatMessage(
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_HMODULE,
@@ -87,10 +89,10 @@ string tPluginBase::Error()
 		);
 		error= (const char *) buff;
 		LocalFree(buff);
-	#else
+	#else*/
 	error = dlerror();
-	#endif
-	return string(error ? error:"ok");
+//	#endif
+	return string(error ? error : "ok");
 }
 
 int tPluginBase::StrLog(ostream & ostr, int level)
