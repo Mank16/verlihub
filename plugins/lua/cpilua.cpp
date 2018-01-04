@@ -806,7 +806,7 @@ bool cpiLua::OnUserLogout(cUser *user)
 	return true;
 }
 
-bool cpiLua::OnTimer(__int64 msec)
+bool cpiLua::OnTimer(int64_t msec)
 {
 	std::stringstream ss;
 	ss << msec;

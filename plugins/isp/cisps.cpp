@@ -91,9 +91,9 @@ bool cISP::CheckConn(const string &ConnType)
 	else return true;
 }
 
-int cISP::CheckShare(int cls, __int64 share, __int64 min_unit, __int64 max_unit)
+int cISP::CheckShare(int cls, int64_t share, int64_t min_unit, int64_t max_unit)
 {
-	__int64 min_share, max_share;
+	int64_t min_share, max_share;
 	min_share = share/ min_unit;
 	max_share = share/ max_unit;
 	if ((cls < 0) || (cls > 3)) return 0;

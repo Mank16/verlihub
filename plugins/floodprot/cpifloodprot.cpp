@@ -96,7 +96,7 @@ bool cpiFloodprot::OnCloseConn(cConnDC *conn)
 }
 
 
-bool cpiFloodprot::OnTimer(__int64 msec)
+bool cpiFloodprot::OnTimer(int64_t msec)
 {
 	if(!mFloodprotect->CleanUp(30))
 	{

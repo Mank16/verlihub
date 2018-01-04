@@ -217,14 +217,6 @@ void ReplaceVarInString(const string &src,const string &varname,string &dest, lo
 	ReplaceVarInString(src, varname, dest, os.str());
 }
 
-/*!
-    \fn ReplaceVarInString(const string&,const string &varname,string &dest, int64 by)
- */
-void ReplaceVarInString(const string &src,const string &varname,string &dest, int64_t by)
-{
-	ReplaceVarInString(src, varname, dest, StringFrom(by));
-}
-
 string convertByte(int64_t byte, bool UnitSec)
 {
 	static const char *byteUnit[] = { _("B"), _("KB"), _("MB"), _("GB"), _("TB"), _("PB"), _("EB"), _("ZB"), _("YB") };
