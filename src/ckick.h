@@ -21,6 +21,7 @@
 #ifndef CKICK_H
 #define CKICK_H
 #include <string>
+#include  <stdint.h>
 
 using namespace std;
 

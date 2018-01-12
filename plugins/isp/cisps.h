@@ -62,7 +62,7 @@ public:
 	//-- methods
 	bool CheckNick(const string &Nick, const string &cc);
 	bool CheckConn(const string &ConnType);
-	int CheckShare(int cls, __int64 share, __int64 min_unit, __int64 max_unit);
+	int CheckShare(int cls, int64_t share, int64_t min_unit, int64_t max_unit);
 
 	cpiISP *mPI;
 	virtual void OnLoad();

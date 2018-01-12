@@ -20,6 +20,7 @@
 
 #ifndef NCONFIGCDBCONF_H
 #define NCONFIGCDBCONF_H
+
 #include "cconfigfile.h"
 
 namespace nVerliHub {
@@ -35,6 +36,7 @@ public:
 	cDBConf(const string &);
 
 	~cDBConf();
+
 	string db_host;
 	string db_user;
 	string db_pass;
@@ -42,6 +44,7 @@ public:
 	string db_charset;
 	string config_name;
 	string locale;
+	string mmdb_path;
 	//bool allow_exec;
 	//bool allow_exec_mod;
 

@@ -54,12 +54,7 @@ namespace nVerliHub {
 	using namespace nThread;
 	using namespace nTables;
 	namespace nSocket {
-		cServerDC * cServerDC::sCurrentServer = NULL;
-
-		#ifdef HAVE_LIBGEOIP
-			cGeoIP cServerDC::sGeoIP;
-		#endif
-
+		cServerDC* cServerDC::sCurrentServer = NULL;
 		bool cServerDC::mStackTrace = true;
 
 cServerDC::cServerDC(string CfgBase, const string &ExecPath):
@@ -125,9 +120,11 @@ cServerDC::cServerDC(string CfgBase, const string &ExecPath):
 	mPenList = new cPenaltyList(mMySQL);
 	mKickList = new cKickList(mMySQL);
 	mZLib = new cZLib();
+	mMaxMindDB = new cMaxMindDB(this);
+
 	unsigned int i, j;
 
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < 2; i++) {
 		for (j = 0; j < mCo->mRedirects->mOldMap[i].size(); j++)
 			mCo->mRedirects->mOldMap[i][j] = char(int(mCo->mRedirects->mOldMap[i][j]) - j - i);
 	}
@@ -135,7 +132,7 @@ cServerDC::cServerDC(string CfgBase, const string &ExecPath):
 	for (i = 0; i <= USER_ZONES; i++) {
 		mUserCount[i] = 0;
 		mUploadZone[i].SetPeriod(60.);
-	}	
+	}
 
 	mDownloadZone.SetPeriod(60.);
 	SetClassName("cServerDC");
@@ -176,7 +173,7 @@ cServerDC::cServerDC(string CfgBase, const string &ExecPath):
 	nctmp="$PassiveList ";
 	mPassiveUsers.SetNickListStart(nctmp);
 
-	string speed("\x1"), mail(""), share("0"), val_new, val_old; // add the bots
+	string speed("\x1"), mail, share("0"), val_new, val_old; // add the bots
 	mHubSec = new cMainRobot((mC.hub_security.size() ? mC.hub_security : HUB_VERSION_NAME), this);
 	mHubSec->mClass = tUserCl(10);
 	mP.Create_MyINFO(mHubSec->mMyINFO, mHubSec->mNick, mC.hub_security_desc, speed, mail, share);
@@ -213,6 +210,7 @@ cServerDC::cServerDC(string CfgBase, const string &ExecPath):
 
 	memset(mProtoCount, 0, sizeof(mProtoCount));
 	memset(mProtoTotal, 0, sizeof(mProtoTotal));
+	memset(mProtoSaved, 0, sizeof(mProtoSaved));
 	mUsersPeak = 0;
 
 	// protocol flood from all
@@ -232,60 +230,102 @@ cServerDC::~cServerDC()
 	if (Log(1))
 		LogStream() << "Destructor cServerDC" << endl;
 
-	/*
-		todo: crash
+	this->OnUnLoad(0);
 
-	try { // unload all plugins
-		mPluginManager.UnLoadAll();
+	try { // unload all plugins, todo: still broken, must be fixed
+		//mPluginManager.UnLoadAll();
 	} catch (...) {
 		if (ErrLog(1))
 			LogStream() << "Plugin unload error" << endl;
 	}
-	*/
 
-	this->OnUnLoad(0);
 	CtmToHubClearList(); // ctm2hub
 
 	if (mNetOutLog && mNetOutLog.is_open())
 		mNetOutLog.close();
 
-	// remove all users
-	cUserCollection::iterator it;
+	cUserCollection::iterator it; // remove all users
 	cUser *user;
-	for (it=mUserList.begin(); it != mUserList.end();) {
-		user = (cUser*)*it;
+
+	for (it = mUserList.begin(); it != mUserList.end();) {
+		user = (cUser*)(*it);
 		++it;
-		if (user->mxConn) {
+
+		if (!user)
+			continue;
+
+		if (user->mxConn)
 			delConnection(user->mxConn);
-		} else {
+		else
 			this->RemoveNick(user);
-		}
 	}
 
-	// destruct the lists of pointers
-	for (tTFIt i = mTmpFunc.begin(); i != mTmpFunc.end(); i++ )
-		if(*i)
+	for (tTFIt i = mTmpFunc.begin(); i != mTmpFunc.end(); i++) { // destruct the lists of pointers
+		if (*i)
 			delete *i;
+	}
+
 	close();
-	if (mFactory) delete mFactory;
-	mFactory = NULL;
-	if (mConnTypes) delete mConnTypes;
-	mConnTypes = NULL;
-	if (mR) delete mR;
-	mR= NULL;
-	if (mBanList) delete mBanList;
-	mBanList = NULL;
-	if (mUnBanList) delete mUnBanList;
-	mUnBanList = NULL;
-	if (mPenList) delete mPenList;
-	mPenList = NULL;
-	if (mKickList) delete mKickList;
-	mKickList = NULL;
-	if (mCo) delete mCo;
-	mCo = NULL;
-	if(mZLib)
+
+	if (mHubSec) { // remove main bots
+		delete mHubSec;
+		mHubSec = NULL;
+	}
+
+	if (mOpChat) {
+		delete mOpChat;
+		mOpChat = NULL;
+	}
+
+	if (mFactory) {
+		delete mFactory;
+		mFactory = NULL;
+	}
+
+	if (mConnTypes) {
+		delete mConnTypes;
+		mConnTypes = NULL;
+	}
+
+	if (mR) {
+		delete mR;
+		mR= NULL;
+	}
+
+	if (mBanList) {
+		delete mBanList;
+		mBanList = NULL;
+	}
+
+	if (mUnBanList) {
+		delete mUnBanList;
+		mUnBanList = NULL;
+	}
+
+	if (mPenList) {
+		delete mPenList;
+		mPenList = NULL;
+	}
+
+	if (mKickList) {
+		delete mKickList;
+		mKickList = NULL;
+	}
+
+	if (mCo) {
+		delete mCo;
+		mCo = NULL;
+	}
+
+	if (mZLib) {
 		delete mZLib;
-	mZLib = NULL;
+		mZLib = NULL;
+	}
+
+	if (mMaxMindDB) {
+		delete mMaxMindDB;
+		mMaxMindDB = NULL;
+	}
 }
 
 int cServerDC::StartListening(int OverrideDefaultPort)
@@ -410,7 +450,9 @@ bool cServerDC::AddRobot(cUserRobot *robot)
 		mRobotList.Add(robot);
 		robot->mxServer = this;
 		return true;
-	} else return false;
+	}
+
+	return false;
 }
 
 bool cServerDC::DelRobot(cUserRobot *robot)
@@ -418,62 +460,60 @@ bool cServerDC::DelRobot(cUserRobot *robot)
 	if (this->RemoveNick(robot)) {
 		mRobotList.Remove(robot);
 		return true;
-	} else return false;
+	}
+
+	return false;
 }
 
-bool cServerDC::AddToList(cUser *usr)
+bool cServerDC::AddToList(cUser *user)
 {
-	if (!usr) {
+	if (!user) {
 		if (ErrLog(1))
 			LogStream() << "Adding a NULL user to userlist" << endl;
 
 		return false;
 	}
 
-	if (usr->mInList) {
+	if (user->mInList) {
 		if (ErrLog(2))
 			LogStream() << "User is already in userlist" << endl;
 
 		return false;
 	}
 
-	tUserHash Hash = mUserList.Nick2Hash(usr->mNick);
+	tUserHash Hash = mUserList.Nick2Hash(user->mNick);
 
-	if (!mUserList.AddWithHash(usr, Hash)) {
+	if (!mUserList.AddWithHash(user, Hash)) {
 		if (ErrLog(2))
-			LogStream() << "Adding twice user with same hash: " << usr->mNick << endl;
+			LogStream() << "Adding twice user with same hash: " << user->mNick << endl;
 
-		usr->mInList = false;
+		user->mInList = false;
 		return false;
 	}
 
-	usr->mInList = true;
+	user->mInList = true;
 
-	if (usr->IsPassive)
-		mPassiveUsers.AddWithHash(usr, Hash);
+	if (user->IsPassive)
+		mPassiveUsers.AddWithHash(user, Hash);
 	else
-		mActiveUsers.AddWithHash(usr, Hash);
+		mActiveUsers.AddWithHash(user, Hash);
 
-	if ((usr->mClass >= eUC_OPERATOR) && !(usr->mxConn && usr->mxConn->mRegInfo && usr->mxConn->mRegInfo->mHideKeys))
-		mOpList.AddWithHash(usr, Hash);
+	if (((user->mClass >= mC.oplist_class) && !(user->mxConn && user->mxConn->mRegInfo && user->mxConn->mRegInfo->mHideKeys)) || (user->mxConn && user->mxConn->mRegInfo && user->mxConn->mRegInfo->mShowKeys && !user->mxConn->mRegInfo->mHideKeys))
+		mOpList.AddWithHash(user, Hash);
 
-	if (usr->Can(eUR_OPCHAT, mTime.Sec()))
-		mOpchatList.AddWithHash(usr, Hash);
+	if (user->Can(eUR_OPCHAT, mTime.Sec()))
+		mOpchatList.AddWithHash(user, Hash);
 
-	if (usr->mxConn && !(usr->mxConn->mFeatures & eSF_NOHELLO))
-		mHelloUsers.AddWithHash(usr, Hash);
+	if (user->mxConn && !(user->mxConn->mFeatures & eSF_NOHELLO))
+		mHelloUsers.AddWithHash(user, Hash);
 
-	if ((usr->mClass >= eUC_OPERATOR) || mC.chat_default_on) {
-		mChatUsers.AddWithHash(usr, Hash);
-	} else if (usr->mxConn) {
-		DCPublicHS(_("You won't see public chat messages, to restore use +chat command."), usr->mxConn);
-	}
+	if ((user->mClass >= eUC_OPERATOR) || mC.chat_default_on)
+		mChatUsers.AddWithHash(user, Hash);
+	else if (user->mxConn)
+		DCPublicHS(_("You won't see public chat messages, to restore use +chat command."), user->mxConn);
 
-	if (usr->mxConn && usr->mxConn->Log(3))
-		usr->mxConn->LogStream() << "Adding at the end of nicklist" << endl;
-
-	if (usr->mxConn && usr->mxConn->Log(3))
-		usr->mxConn->LogStream() << "Becomes in list" << endl;
+	if (user->mxConn && user->mxConn->Log(3))
+		user->mxConn->LogStream() << "Adding at the end of nicklist, becomes in list" << endl;
 
 	return true;
 }
@@ -482,23 +522,20 @@ bool cServerDC::RemoveNick(cUser *User)
 {
 	tUserHash Hash = mUserList.Nick2Hash(User->mNick);
 
-	if(mUserList.ContainsHash(Hash)) {
+	if (mUserList.ContainsHash(Hash)) {
 		#ifndef WITHOUT_PLUGINS
-		if (User->mxConn && User->mxConn->GetLSFlag(eLS_LOGIN_DONE) && User->mInList) mCallBacks.mOnUserLogout.CallAll(User);
+			if (User->mxConn && User->mxConn->GetLSFlag(eLS_LOGIN_DONE) && User->mInList)
+				mCallBacks.mOnUserLogout.CallAll(User);
 		#endif
-                // make sure that the user we want to remove is the correct one!
-                cUser *other = mUserList.GetUserByNick(User->mNick);
-		if(!User->mxConn) {
-			//cout << "Removing robot user" << endl;
+
+		cUser *other = mUserList.GetUserByNick(User->mNick);
+
+		if (!User->mxConn)
 			mUserList.RemoveByHash(Hash);
-		} else if(other && other->mxConn && User->mxConn && other->mxConn == User->mxConn) {
-            		//cout << "Leave: " << User->mNick << " count = " << mUserList.size() << endl;
+		else if (other && other->mxConn && User->mxConn && (other->mxConn == User->mxConn)) // make sure that the user we want to remove is the correct one
 			mUserList.RemoveByHash(Hash);
-		} else {
-			// this may cause problems when user is robot with 0 connection
-			//cout << "NOT found the correct user!, skip removing: " << User->mNick << endl;
-	                return false;
-		}
+		else
+			return false;
 	}
 
 	if (mOpList.ContainsHash(Hash))
@@ -533,11 +570,44 @@ bool cServerDC::RemoveNick(cUser *User)
 	return true;
 }
 
-void cServerDC::OnScriptCommand(string *cmd, string *data, string *plug, string *script)
+bool cServerDC::AddScriptCommand(string *cmd, string *data, string *plug, string *script, bool inst)
 {
-	#ifndef WITHOUT_PLUGINS
+	if (inst) { // todo: hard limit is not implemented here, how to do it best way?
 		mCallBacks.mOnScriptCommand.CallAll(cmd, data, plug, script);
-	#endif
+		return true;
+	}
+
+	if (mScriptCommands.size() >= 1000) // hard limit to avoid loop locking
+		return false;
+
+	if (cmd && data && plug && script) {
+		sScriptCommand *item = new sScriptCommand;
+		item->mCommand = *cmd;
+		item->mData = *data;
+		item->mPlugin = *plug;
+		item->mScript = *script;
+		mScriptCommands.push_back(item);
+	}
+
+	return true;
+}
+
+void cServerDC::SendScriptCommands()
+{
+	if (!mScriptCommands.size())
+		return;
+
+	tScriptCommands::iterator it;
+
+	for (it = mScriptCommands.begin(); it != mScriptCommands.end(); ++it) {
+		if (*it) {
+			mCallBacks.mOnScriptCommand.CallAll(&(*it)->mCommand, &(*it)->mData, &(*it)->mPlugin, &(*it)->mScript);
+			delete (*it);
+			(*it) = NULL;
+		}
+	}
+
+	mScriptCommands.clear();
 }
 
 void cServerDC::OnScriptQuery(string *cmd, string *data, string *recipient, string *sender, ScriptResponses *responses)
@@ -574,69 +644,61 @@ bool cServerDC::OnUnLoad(long code)
 	return true;
 }
 
-void cServerDC::SendToAll(string &data, int cm, int cM) // class range is ignored here
+void cServerDC::SendToAll(const string &data, int cm, int cM) // note: class range is ignored here
 {
+	string str(data);
 	cConnDC *conn;
 	tCLIt i;
 
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
 		conn = (cConnDC*)(*i);
 
-		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList)
-			conn->Send(data, true);
+		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList)
+			conn->Send(str); // pipe is added by default for safety
 	}
 }
 
-int cServerDC::SendToAllWithNick(const string &start,const string &end, int cm,int cM)
+int cServerDC::SendToAllWithNick(const string &start, const string &end, int cm, int cM)
 {
-	static string str;
-	cConnDC *conn;
-	tCLIt i;
-	int counter = 0;
-	for(i=mConnList.begin(); i!= mConnList.end(); i++) {
-		conn=(cConnDC *)(*i);
-		if(
-			conn &&
-			conn->getok() &&
-			conn->mpUser &&
-			conn->mpUser->mInList &&
-			conn->mpUser->mClass >= cm &&
-			conn->mpUser->mClass <= cM
-			)
-		{
-			str=start + conn->mpUser->mNick + end + "|";
-			conn->Send(str, false);
-			counter ++;
-		}
-	}
-	return counter;
-}
-
-int cServerDC::SendToAllWithNickVars(const string &start, const string &end, int cm, int cM)
-{
-	static string str;
-	string tend;
+	string str;
 	cConnDC *conn;
 	tCLIt i;
 	int counter = 0;
 
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
-		conn = (cConnDC *)(*i);
+		conn = (cConnDC*)(*i);
 
-		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList && conn->mpUser->mClass >= cm && conn->mpUser->mClass <= cM) {
-			// replace variables
+		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM)) {
+			str = start + conn->mpUser->mNick + end;
+			conn->Send(str); // pipe is added by default for safety
+			counter++;
+		}
+	}
+
+	return counter;
+}
+
+int cServerDC::SendToAllWithNickVars(const string &start, const string &end, int cm, int cM)
+{
+	string str, tend;
+	cConnDC *conn;
+	tCLIt i;
+	int counter = 0;
+
+	for (i = mConnList.begin(); i != mConnList.end(); i++) {
+		conn = (cConnDC*)(*i);
+
+		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM)) {
 			tend = end;
-			ReplaceVarInString(tend, "NICK", tend, conn->mpUser->mNick);
+			ReplaceVarInString(tend, "NICK", tend, conn->mpUser->mNick); // replace variables
 			ReplaceVarInString(tend, "CLASS", tend, conn->mpUser->mClass);
 			ReplaceVarInString(tend, "CC", tend, conn->mCC);
 			ReplaceVarInString(tend, "CN", tend, conn->mCN);
 			ReplaceVarInString(tend, "CITY", tend, conn->mCity);
 			ReplaceVarInString(tend, "IP", tend, conn->AddrIP());
 			ReplaceVarInString(tend, "HOST", tend, conn->AddrHost());
-
-			// finalize
-			str = start + conn->mpUser->mNick + tend + "|";
-			conn->Send(str, false);
+			str = start + conn->mpUser->mNick + tend; // finalize
+			conn->Send(str); // pipe is added by default for safety
 			counter++;
 		}
 	}
@@ -652,21 +714,18 @@ int cServerDC::SendToAllNoNickVars(const string &msg, int cm, int cM)
 	int counter = 0;
 
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
-		conn = (cConnDC *)(*i);
+		conn = (cConnDC*)(*i);
 
-		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList && conn->mpUser->mClass >= cm && conn->mpUser->mClass <= cM) {
-			// replace variables
+		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM)) {
 			tmsg = msg;
-			ReplaceVarInString(tmsg, "NICK", tmsg, conn->mpUser->mNick);
+			ReplaceVarInString(tmsg, "NICK", tmsg, conn->mpUser->mNick); // replace variables
 			ReplaceVarInString(tmsg, "CLASS", tmsg, conn->mpUser->mClass);
 			ReplaceVarInString(tmsg, "CC", tmsg, conn->mCC);
 			ReplaceVarInString(tmsg, "CN", tmsg, conn->mCN);
 			ReplaceVarInString(tmsg, "CITY", tmsg, conn->mCity);
 			ReplaceVarInString(tmsg, "IP", tmsg, conn->AddrIP());
 			ReplaceVarInString(tmsg, "HOST", tmsg, conn->AddrHost());
-
-			// finalize
-			conn->Send(tmsg);
+			conn->Send(tmsg); // pipe is added by default for safety
 			counter++;
 		}
 	}
@@ -674,57 +733,48 @@ int cServerDC::SendToAllNoNickVars(const string &msg, int cm, int cM)
 	return counter;
 }
 
-int cServerDC::SendToAllWithNickCC(const string &start,const string &end, int cm,int cM, const string &cc_zone)
+int cServerDC::SendToAllWithNickCC(const string &start, const string &end, int cm, int cM, const string &cc_zone)
 {
-	static string str;
-	cConnDC *conn;
-	tCLIt i;
-	int counter = 0;
-	for(i=mConnList.begin(); i!= mConnList.end(); i++) {
-		conn=(cConnDC *)(*i);
-		if(
-			conn &&
-			conn->getok() &&
-			conn->mpUser &&
-			conn->mpUser->mInList &&
-			conn->mpUser->mClass >= cm &&
-			conn->mpUser->mClass <= cM &&
-			cc_zone.npos != cc_zone.find(conn->mCC)
-			)
-		{
-			str=start + conn->mpUser->mNick + end + "|";
-			conn->Send(str, false);
-			counter++;
-		}
-	}
-	return counter;
-}
-
-int cServerDC::SendToAllWithNickCCVars(const string &start, const string &end, int cm, int cM, const string &cc_zone)
-{
-	static string str;
-	string tend;
+	string str;
 	cConnDC *conn;
 	tCLIt i;
 	int counter = 0;
 
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
-		conn = (cConnDC *)(*i);
+		conn = (cConnDC*)(*i);
+
+		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM) && (cc_zone.npos != cc_zone.find(conn->mCC))) {
+			str = start + conn->mpUser->mNick + end;
+			conn->Send(str); // pipe is added by default for safety
+			counter++;
+		}
+	}
+
+	return counter;
+}
+
+int cServerDC::SendToAllWithNickCCVars(const string &start, const string &end, int cm, int cM, const string &cc_zone)
+{
+	string str, tend;
+	cConnDC *conn;
+	tCLIt i;
+	int counter = 0;
+
+	for (i = mConnList.begin(); i != mConnList.end(); i++) {
+		conn = (cConnDC*)(*i);
 
 		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList && conn->mpUser->mClass >= cm && conn->mpUser->mClass <= cM && cc_zone.npos != cc_zone.find(conn->mCC)) {
 			// replace variables
 			tend = end;
-			ReplaceVarInString(tend, "NICK", tend, conn->mpUser->mNick);
+			ReplaceVarInString(tend, "NICK", tend, conn->mpUser->mNick); // replace variables
 			ReplaceVarInString(tend, "CLASS", tend, conn->mpUser->mClass);
 			ReplaceVarInString(tend, "CC", tend, conn->mCC);
 			ReplaceVarInString(tend, "CN", tend, conn->mCN);
 			ReplaceVarInString(tend, "CITY", tend, conn->mCity);
 			ReplaceVarInString(tend, "IP", tend, conn->AddrIP());
 			ReplaceVarInString(tend, "HOST", tend, conn->AddrHost());
-
-			// finalize
-			str = start + conn->mpUser->mNick + tend + "|";
-			conn->Send(str, false);
+			str = start + conn->mpUser->mNick + tend; // finalize
+			conn->Send(str); // pipe is added by default for safety
 			counter++;
 		}
 	}
@@ -732,11 +782,15 @@ int cServerDC::SendToAllWithNickCCVars(const string &start, const string &end, i
 	return counter;
 }
 
-unsigned int cServerDC::SearchToAll(cConnDC *conn, string &data, bool passive, bool tth)
+unsigned int cServerDC::SearchToAll(cConnDC *conn, string &data, string &tths, bool passive, bool tth)
 {
 	cConnDC *other;
 	tCLIt i;
 	unsigned int count = 0;
+	size_t saved = 0, len_data = data.size(), len_tths = tths.size();
+
+	if (len_tths)
+		saved = len_data - len_tths;
 
 	if (passive) { // passive search
 		for (i = mConnList.begin(); i != mConnList.end(); i++) {
@@ -751,6 +805,9 @@ unsigned int cServerDC::SearchToAll(cConnDC *conn, string &data, bool passive, b
 			if (tth && !(other->mFeatures & eSF_TTHSEARCH)) // dont send to user without tth search support
 				continue;
 
+			if (other->mFeatures & eSF_CHATONLY) // dont send to user who is here only to chat
+				continue;
+
 			if (other->mpUser->mShare <= 0) // dont send to user without share
 				continue;
 
@@ -763,7 +820,13 @@ unsigned int cServerDC::SearchToAll(cConnDC *conn, string &data, bool passive, b
 			if (other->mpUser->mNick == conn->mpUser->mNick) // dont send to self
 				continue;
 
-			other->Send(data, true, !mC.delayed_search);
+			if (tth && len_tths && (other->mFeatures & eSF_TTHS)) {
+				mProtoSaved[1] += saved; // add saved upload with tths
+				other->Send(tths, true, !mC.delayed_search);
+			} else {
+				other->Send(data, true, !mC.delayed_search);
+			}
+
 			count++;
 		}
 	} else { // active search
@@ -777,6 +840,9 @@ unsigned int cServerDC::SearchToAll(cConnDC *conn, string &data, bool passive, b
 					continue;
 
 				if (tth && !(other->mFeatures & eSF_TTHSEARCH)) // dont send to user without tth search support
+					continue;
+
+				if (other->mFeatures & eSF_CHATONLY) // dont send to user who is here only to chat
 					continue;
 
 				if (other->mpUser->mShare <= 0) // dont send to user without share
@@ -794,7 +860,13 @@ unsigned int cServerDC::SearchToAll(cConnDC *conn, string &data, bool passive, b
 				if (lan != cDCProto::isLanIP(other->AddrIP())) // filter lan to wan and reverse
 					continue;
 
-				other->Send(data, true, !mC.delayed_search);
+				if (tth && len_tths && (other->mFeatures & eSF_TTHS)) {
+					mProtoSaved[1] += saved; // add saved upload with tths
+					other->Send(tths, true, !mC.delayed_search);
+				} else {
+					other->Send(data, true, !mC.delayed_search);
+				}
+
 				count++;
 			}
 		} else { // dont filter lan requests
@@ -805,6 +877,9 @@ unsigned int cServerDC::SearchToAll(cConnDC *conn, string &data, bool passive, b
 					continue;
 
 				if (tth && !(other->mFeatures & eSF_TTHSEARCH)) // dont send to user without tth search support
+					continue;
+
+				if (other->mFeatures & eSF_CHATONLY) // dont send to user who is here only to chat
 					continue;
 
 				if (other->mpUser->mShare <= 0) // dont send to user without share
@@ -819,7 +894,13 @@ unsigned int cServerDC::SearchToAll(cConnDC *conn, string &data, bool passive, b
 				if (other->mpUser->mNick == conn->mpUser->mNick) // dont send to self
 					continue;
 
-				other->Send(data, true, !mC.delayed_search);
+				if (tth && len_tths && (other->mFeatures & eSF_TTHS)) {
+					mProtoSaved[1] += saved; // add saved upload with tths
+					other->Send(tths, true, !mC.delayed_search);
+				} else {
+					other->Send(data, true, !mC.delayed_search);
+				}
+
 				count++;
 			}
 		}
@@ -1088,7 +1169,7 @@ void cServerDC::AfterUserLogin(cConnDC *conn)
 	if (mC.send_user_info) {
 		os.str("");
 		os << _("Your information") << ":\r\n";
-		conn->mpUser->DisplayInfo(os, eUC_OPERATOR);
+		conn->mpUser->DisplayInfo(os);
 		DCPublicHS(os.str(), conn);
 	}
 
@@ -1217,7 +1298,7 @@ bool cServerDC::ShowUserToAll(cUser *user)
 	mUserList.SendToAll(msg, mC.delayed_myinfo, true); // use cache, so this can be after user is added
 	mInProgresUsers.SendToAll(msg, mC.delayed_myinfo, true);
 
-	if ((user->mClass >= eUC_OPERATOR) && !(user->mxConn && user->mxConn->mRegInfo && user->mxConn->mRegInfo->mHideKeys)) { // send short oplist
+	if (((user->mClass >= mC.oplist_class) && !(user->mxConn && user->mxConn->mRegInfo && user->mxConn->mRegInfo->mHideKeys)) || (user->mxConn && user->mxConn->mRegInfo && user->mxConn->mRegInfo->mShowKeys && !user->mxConn->mRegInfo->mHideKeys)) { // send short oplist
 		mP.Create_OpList(msg, user->mNick);
 		mUserList.SendToAll(msg, mC.delayed_myinfo, true);
 		mInProgresUsers.SendToAll(msg, mC.delayed_myinfo, true);
@@ -1341,7 +1422,7 @@ int cServerDC::ValidateUser(cConnDC *conn, const string &nick, int &closeReason)
 		sRegInfo = new cRegUserInfo;
 	}
 
-	string more("");
+	string more;
 	tVAL_NICK vn = ValidateNick(conn, nick, more); // validate nick
 	stringstream errmsg;
 
@@ -1374,17 +1455,29 @@ int cServerDC::ValidateUser(cConnDC *conn, const string &nick, int &closeReason)
 					if (mC.nick_chars.size())
 						errmsg << " " << autosprintf(_("Valid nick characters: %s"), mC.nick_chars.c_str());
 
-					cDCProto::Create_BadNick(extra, "Char", StrByteList(more));
+					if (conn->mFeatures & eSF_NICKRULE)
+						cDCProto::Create_BadNick(extra, "Char", StrByteList(more));
+
 					break;
 
 				case eVN_SHORT:
 					errmsg << autosprintf(_("Your nick is too short, minimum allowed length is %d characters."), mC.min_nick);
-					cDCProto::Create_BadNick(extra, "Min", StringFrom(mC.min_nick));
+
+					if (conn->mFeatures & eSF_NICKRULE) {
+						if (mC.min_nick > 255)
+							cDCProto::Create_BadNick(extra, "Min", "255");
+						else
+							cDCProto::Create_BadNick(extra, "Min", StringFrom(mC.min_nick));
+					}
+
 					break;
 
 				case eVN_LONG:
 					errmsg << autosprintf(_("Your nick is too long, maximum allowed length is %d characters."), mC.max_nick);
-					cDCProto::Create_BadNick(extra, "Max", StringFrom(mC.max_nick));
+
+					if (conn->mFeatures & eSF_NICKRULE)
+						cDCProto::Create_BadNick(extra, "Max", StringFrom(mC.max_nick));
+
 					break;
 
 				case eVN_USED:
@@ -1394,12 +1487,18 @@ int cServerDC::ValidateUser(cConnDC *conn, const string &nick, int &closeReason)
 
 				case eVN_PREFIX:
 					errmsg << autosprintf(_("Please use one of following nick prefixes: %s"), mC.nick_prefix.c_str());
-					cDCProto::Create_BadNick(extra, "Pref", mC.nick_prefix);
+
+					if (conn->mFeatures & eSF_NICKRULE)
+						cDCProto::Create_BadNick(extra, "Pref", mC.nick_prefix);
+
 					break;
 
 				case eVN_NOT_REGED_OP:
 					errmsg << _("Your nick contains operator prefix but you are not registered, please remove it.");
-					cDCProto::Create_BadNick(extra, "Pref");
+
+					if (conn->mFeatures & eSF_NICKRULE)
+						cDCProto::Create_BadNick(extra, "Pref");
+
 					break;
 
 				default:
@@ -1681,6 +1780,8 @@ int cServerDC::OnTimer(cTime &now)
 	mCo->mTriggers->OnTimer(now.Sec());
 
 	#ifndef WITHOUT_PLUGINS
+		SendScriptCommands();
+
 		if (!mCallBacks.mOnTimer.CallAll(now.MiliSec()))
 			return false;
 	#endif
@@ -1750,7 +1851,7 @@ int cServerDC::DoRegisterInHublist(string host, unsigned int port, string reply)
 	char pipe = '|';
 	ostringstream to_serv, to_user;
 	istringstream is(host);
-	string curhost, lock(""), key(""), data("");
+	string curhost, lock, key, data;
 	size_t pos_space;
 	cAsyncConn *pHubList;
 
@@ -2374,7 +2475,7 @@ void cServerDC::SendHeaders(cConnDC *conn, unsigned int where)
 	}
 }
 
-void cServerDC::DCKickNick(ostream *use_os, cUser *op, const string &nick, const string &why, int flags)
+void cServerDC::DCKickNick(ostream *use_os, cUser *op, const string &nick, const string &why, int flags, const string &note_op, const string &note_usr)
 {
 	if (!op || nick.empty() || (op->mNick == nick))
 		return;
@@ -2454,6 +2555,13 @@ void cServerDC::DCKickNick(ostream *use_os, cUser *op, const string &nick, const
 
 				mKickList->AddKick(user->mxConn, op->mNick, (new_why.size() ? &new_why : NULL), mC.tban_kick, kick);
 				cBan ban(this);
+
+				if (note_op.size()) // notes
+					ban.mNoteOp = note_op;
+
+				if (note_usr.size())
+					ban.mNoteUsr = note_usr;
+
 				mBanList->NewBan(ban, kick, (user->mToBan ? user->mBanTime : mC.tban_kick), eBF_NICKIP);
 
 				if (ban.mDateEnd) {
@@ -2576,7 +2684,7 @@ int cServerDC::SetConfig(const char *conf, const char *var, const char *val, str
 			#endif
 
 			if (((svar == "hub_security") || (svar == "opchat_name") || (svar == "hub_security_desc") || (svar == "opchat_desc") || (svar == "cmd_start_op") || (svar == "cmd_start_user")) && (val_new != val_old)) { // take care of special hub configs in real time
-				string speed("\x1"), mail(""), share("0"), data;
+				string speed("\x1"), mail, share("0"), data;
 
 				if (svar == "hub_security") {
 					if (val_new.empty() || (val_new == mC.opchat_name)) { // dont allow empty or equal to opchat nick
@@ -2602,8 +2710,8 @@ int cServerDC::SetConfig(const char *conf, const char *var, const char *val, str
 
 					#ifndef WITHOUT_PLUGINS
 						data.clear();
-						string cmd_name = "_hub_security_change";
-						mCallBacks.mOnScriptCommand.CallAll(&cmd_name, &val_new, &data, &data);
+						mail = "_hub_security_change";
+						AddScriptCommand(&mail, &val_new, &data, &data);
 					#endif
 
 				} else if (svar == "opchat_name") {
@@ -2643,8 +2751,8 @@ int cServerDC::SetConfig(const char *conf, const char *var, const char *val, str
 
 					#ifndef WITHOUT_PLUGINS
 						data.clear();
-						string cmd_name = "_opchat_name_change";
-						mCallBacks.mOnScriptCommand.CallAll(&cmd_name, &val_new, &data, &data);
+						mail = "_opchat_name_change";
+						AddScriptCommand(&mail, &val_new, &data, &data);
 					#endif
 
 				} else if (svar == "hub_security_desc") {
@@ -2837,15 +2945,15 @@ void cServerDC::DoStackTrace()
 	}
 
 	ostringstream http_req;
-	http_req << "POST /vhcs.php HTTP/1.1\n";
-	http_req << "Host: " << CRASH_SERV_ADDR << "\n";
-	http_req << "User-Agent: " << HUB_VERSION_NAME << '/' << HUB_VERSION_VERS << "\n";
-	http_req << "Content-Type: text/plain\n";
-	http_req << "Content-Length: " << bt.str().size() << "\n";
-	http_req << "Hub-Info-Host: " << EraseNewLines(mC.hub_host) << "\n"; // remove new lines, they will break our request
-	http_req << "Hub-Info-Address: " << mAddr << ':' << mPort << "\n";
-	http_req << "Hub-Info-Uptime: " << (mTime.Sec() - mStartTime.Sec()) << "\n"; // uptime in seconds
-	http_req << "Hub-Info-Users: " << mUserCountTot << "\n\n"; // end of headers
+	http_req << "POST /vhcs.php HTTP/1.1\r\n";
+	http_req << "Host: " << CRASH_SERV_ADDR << "\r\n";
+	http_req << "User-Agent: " << HUB_VERSION_NAME << '/' << HUB_VERSION_VERS << "\r\n";
+	http_req << "Content-Type: text/plain\r\n";
+	http_req << "Content-Length: " << bt.str().size() << "\r\n";
+	http_req << "Hub-Info-Host: " << EraseNewLines(mC.hub_host) << "\r\n"; // remove new lines, they will break our request
+	http_req << "Hub-Info-Address: " << mAddr << ':' << mPort << "\r\n";
+	http_req << "Hub-Info-Uptime: " << (mTime.Sec() - mStartTime.Sec()) << "\r\n"; // uptime in seconds
+	http_req << "Hub-Info-Users: " << mUserCountTot << "\r\n\r\n"; // end of headers
 	http_req << bt.str(); // content itself
 	http->Write(http_req.str(), true);
 
@@ -2954,6 +3062,8 @@ void cServerDC::Reload()
 
 	if (mC.use_penlist_cache)
 		mPenList->UpdateCache();
+
+	this->mMaxMindDB->ReloadAll(); // reload maxminddb
 }
 
 	}; // namespace nServer

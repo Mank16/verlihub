@@ -223,7 +223,7 @@ bool nVerliHub::nPerlPlugin::nCallback::InUserSupports(const char *nick, const c
 		((flag == "UserIP2") && (usr->mxConn->mFeatures & eSF_USERIP2)) ||
 		((flag == "TTHSearch") && (usr->mxConn->mFeatures & eSF_TTHSEARCH)) ||
 		((flag == "Feed") && (usr->mxConn->mFeatures & eSF_FEED)) ||
-		((flag == "ClientID") && (usr->mxConn->mFeatures & eSF_CLIENTID)) ||
+		//((flag == "ClientID") && (usr->mxConn->mFeatures & eSF_CLIENTID)) ||
 		((flag == "IN") && (usr->mxConn->mFeatures & eSF_IN)) ||
 		((flag == "BanMsg") && (usr->mxConn->mFeatures & eSF_BANMSG)) ||
 		((flag == "TLS") && (usr->mxConn->mFeatures & eSF_TLS)) ||

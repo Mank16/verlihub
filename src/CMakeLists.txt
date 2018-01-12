@@ -1,5 +1,5 @@
 #	Copyright (C) 2003-2005 Daniel Muller, dan at verliba dot cz
-#	Copyright (C) 2006-2017 Verlihub Team, info at verlihub dot net
+#	Copyright (C) 2006-2018 Verlihub Team, info at verlihub dot net
 #
 #	Verlihub is free software; You can redistribute it
 #	and modify it under the terms of the GNU General
@@ -48,7 +48,7 @@ SET(VERLIHUB_HDRS
 	cdcproto.h
 	cdctag.h
 	cfreqlimiter.h
-	cgeoip.h
+	cmaxminddb.h
 	cinfoserver.h
 	cinterpolexp.h
 	ckick.h
@@ -130,7 +130,7 @@ SET(VERLIHUB_SRCS
 	cdcproto.cpp
 	cdctag.cpp
 	cfreqlimiter.cpp
-	cgeoip.cpp
+	cmaxminddb.cpp
 	cinfoserver.cpp
 	cinterpolexp.cpp
 	ckick.cpp
@@ -207,7 +207,7 @@ TARGET_LINK_LIBRARIES(verlihub libverlihub)
 
 # ----------------------------------------------------------------------------------------------------
 # Generate verlihub_config
-MESSAGE(STATUS "Generating verlihub_config")
+MESSAGE(STATUS "[ OK ] Generating configuration file: ${CMAKE_BINARY_DIR}/verlihub_config")
 STRING(REPLACE ";" " " VERLIHUB_LIBS "${VERLIHUB_LIBS}")
 CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmake/verlihub_config.cm" ${CMAKE_BINARY_DIR}/verlihub_config)
 # ----------------------------------------------------------------------------------------------------

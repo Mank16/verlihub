@@ -29,31 +29,27 @@
 using namespace std;
 
 namespace nVerliHub {
-	bool SendDataToUser(const char *data, const char *nick);
-	bool SendToClass(const char *data, int min_class, int max_class);
-	bool SendToAll(const char *data);
-	bool SendToActive(const char *data);
-	bool SendToActiveClass(const char *data, int min_class, int max_class);
-	bool SendToPassive(const char *data);
-	bool SendToPassiveClass(const char *data, int min_class, int max_class);
-	bool SendPMToAll(const char *data, const char *from, int min_class, int max_class);
+	bool SendDataToUser(const char *data, const char *nick, bool delay = false);
+	bool SendToClass(const char *data, int min_class = 0, int max_class = 10, bool delay = false);
+	bool SendToAll(const char *data, bool delay = false);
+	bool SendToActive(const char *data, bool delay = false);
+	bool SendToActiveClass(const char *data, int min_class = 0, int max_class = 10, bool delay = false);
+	bool SendToPassive(const char *data, bool delay = false);
+	bool SendToPassiveClass(const char *data, int min_class = 0, int max_class = 10, bool delay = false);
+	bool SendPMToAll(const char *data, const char *from, int min_class = 0, int max_class = 10);
 	bool SendToChat(const char *nick, const char *text, int min_class = 0, int max_class = 10);
 	bool SendToOpChat(const char *data, const char *nick = NULL);
 	bool CloseConnection(const char *nick, long delay = 0);
 	bool StopHub(int code, int delay);
 	const char* GetUserCC(const char *nick);
-
-	#ifdef HAVE_LIBGEOIP
-		string GetIPCC(const char *ip);
-		string GetIPCN(const char *ip);
-	#endif
-
+	string GetIPCC(const char *ip);
+	string GetIPCN(const char *ip);
 	const char* GetMyINFO(const char *nick);
 	int GetUserClass(const char *nick);
 	const char* GetUserHost(const char *nick);
 	const char* GetUserIP(const char *nick);
 	bool Ban(const char *, const string &, const string &, unsigned, unsigned);
-	bool KickUser(const char *opnick, const char *nick, const char *reason);
+	bool KickUser(const char *oper, const char *nick, const char *why, const char *note_op = NULL, const char *note_usr = NULL);
 	bool DeleteNickTempBan(const char *nick);
 	bool DeleteIPTempBan(const char *ip);
 	bool ParseCommand(const char *nick, const char *cmd, int pm);
@@ -63,12 +59,13 @@ namespace nVerliHub {
 	bool GetTempRights(const char *nick, map<string,int> &rights);
 	bool AddRegUser(const char *nick, int uclass, const char *pass, const char* op);
 	bool DelRegUser(const char *nick);
-	bool ScriptCommand(string *cmd, string *data, string *plug, string *script);
+	bool ScriptCommand(string *cmd, string *data, string *plug, string *script, bool inst = false);
 	bool ScriptQuery(string *cmd, string *data, string *recipient, string *sender, ScriptResponses *responses);
 	int CheckBotNick(const string &nick);
 	bool CheckDataPipe(const string &data);
 
-	extern "C" {
+	extern "C"
+	{
 		int GetUsersCount();
 		const char* GetNickList();
 	}

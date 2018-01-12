@@ -93,6 +93,7 @@ class cRegUserInfo
 		int mClassHideKick;
 		bool mHideKick;
 		bool mHideKeys;
+		bool mShowKeys;
 		bool mHideShare;
 		bool mHideCtmMsg;
 		long mRegDate;
@@ -116,8 +117,12 @@ class cRegUserInfo
 		bool mPwdChange;
 		/** account enabled */
 		bool mEnabled;
+
+		// additional notes
 		string mNoteOp;
 		string mNoteUsr;
+
+		// email
 		string mEmail;
 };
 	}; // nTables

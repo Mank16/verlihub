@@ -24,8 +24,10 @@ SET(SQL_FILES
 	sql/default_client_list.sql
 )
 
-SET(CONFIG_FILES
+SET(CONFIG_FILES # default
 	config/faq
+	config/motd
+	config/rules
 	config/help_admin
 	config/help_cheef
 	config/help_master
@@ -33,8 +35,16 @@ SET(CONFIG_FILES
 	config/help_reg
 	config/help_usr
 	config/help_vip
-	config/motd
-	config/rules
+)
+
+SET(CONFIG_FILES_RU # russian
+	config/ru/help_admin
+	config/ru/help_cheef
+	config/ru/help_master
+	config/ru/help_op
+	config/ru/help_reg
+	config/ru/help_usr
+	config/ru/help_vip
 )
 
 SET(TEST_SCRIPT_FILES
@@ -48,4 +58,5 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/sql/default_pi_plug.sql.in ${CMAKE_CU
 SET(SQL_FILES ${SQL_FILES}  ${CMAKE_CURRENT_BINARY_DIR}/sql/default_pi_plug.sql)
 INSTALL(FILES ${SQL_FILES} DESTINATION share/${PROJECT_NAME}/sql)
 INSTALL(FILES ${CONFIG_FILES} DESTINATION share/${PROJECT_NAME}/config)
+INSTALL(FILES ${CONFIG_FILES_RU} DESTINATION share/${PROJECT_NAME}/config/ru)
 INSTALL(FILES ${TEST_SCRIPT_FILES} DESTINATION share/${PROJECT_NAME}/test_scripts)

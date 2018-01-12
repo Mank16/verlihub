@@ -1452,14 +1452,14 @@ int _InUserSupports(lua_State *L)
 	((flag == "UserIP2") && (usr->mxConn->mFeatures & eSF_USERIP2)) ||
 	((flag == "TTHSearch") && (usr->mxConn->mFeatures & eSF_TTHSEARCH)) ||
 	((flag == "Feed") && (usr->mxConn->mFeatures & eSF_FEED)) ||
-	((flag == "ClientID") && (usr->mxConn->mFeatures & eSF_CLIENTID)) ||
+//	((flag == "ClientID") && (usr->mxConn->mFeatures & eSF_CLIENTID)) ||
 	((flag == "IN") && (usr->mxConn->mFeatures & eSF_IN)) ||
 	((flag == "BanMsg") && (usr->mxConn->mFeatures & eSF_BANMSG)) ||
 	((flag == "TLS") && (usr->mxConn->mFeatures & eSF_TLS)) ||
 	((flag == "FailOver") && (usr->mxConn->mFeatures & eSF_FAILOVER)) ||
 	((flag == "NickChange") && (usr->mxConn->mFeatures & eSF_NICKCHANGE)) ||
 	((flag == "ClientNick") && (usr->mxConn->mFeatures & eSF_CLIENTNICK)) ||
-	((flag == "FeaturedNetworks") && (usr->mxConn->mFeatures & eSF_FEATNET)) ||
+	//((flag == "FeaturedNetworks") && (usr->mxConn->mFeatures & eSF_FEATNET)) ||
 	((flag == "ZLine") && (usr->mxConn->mFeatures & eSF_ZLINE)) ||
 	((flag == "GetZBlock") && (usr->mxConn->mFeatures & eSF_GETZBLOCK)) ||
 	((flag == "ACTM") && (usr->mxConn->mFeatures & eSF_ACTM)) ||

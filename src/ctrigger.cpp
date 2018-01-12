@@ -23,9 +23,6 @@
 #include "cuser.h"
 #include "cconndc.h"
 #include "stringutils.h"
-#ifdef HAVE_LIBGEOIP
-#include "cgeoip.h"
-#endif
 #include <stdlib.h>
 #include <time.h>
 #ifdef HAVE_CONFIG_H

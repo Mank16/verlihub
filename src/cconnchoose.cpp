@@ -111,8 +111,8 @@ bool cConnChoose::HasConn(cAsyncConn *conn)
 //	tSocket sock = (tSocket)(*conn);
 //	if ( (tSocket)mConnList.size() <= sock ) return false;
 //	return mConnList[sock] != NULL;
-    vector<cAsyncConn*>::iterator results = std::find(std::begin(mConnList), std::end(mConnList), conn);
-	return results != std::end(mConnList);
+    vector<cAsyncConn*>::iterator results = std::find(mConnList.begin(), mConnList.end(), conn);
+	return results != mConnList.end();
 }
 
 inline cConnBase * cConnChoose::operator[] (tSocket sock)

@@ -22,6 +22,7 @@
 #include "creguserinfo.h"
 #include "cdcconf.h"
 #include <string>
+#include <zlib.h>
 
 using namespace std;
 
@@ -44,7 +45,7 @@ void cDCConf::AddVars()
 	Add("hub_category",hub_category,string(""));
 	Add("hub_icon_url", hub_icon_url, string(""));
 	Add("hub_logo_url", hub_logo_url, string(""));
-	Add("hub_encoding", hub_encoding, string("CP1252"));
+	Add("hub_encoding", hub_encoding, DEFAULT_HUB_ENCODING);
 	Add("hub_owner",hub_owner,string(""));
 	Add("hub_version", hub_version, HUB_VERSION_VERS);
 	Add("hub_version_special",hub_version_special,string(""));
@@ -52,7 +53,7 @@ void cDCConf::AddVars()
 	Add("hub_security_desc", hub_security_desc, string("Hub security"));
 	Add("opchat_name", opchat_name, string("OpChat"));
 	Add("opchat_desc", opchat_desc, string("Operator chat"));
-	Add("opchat_class", opchat_class, (int)eUC_OPERATOR);
+	Add("opchat_class", opchat_class, int(eUC_OPERATOR));
 	Add("hub_host", hub_host, string(""));
 	Add("hub_failover_hosts", hub_failover_hosts, string(""));
 
@@ -131,13 +132,16 @@ void cDCConf::AddVars()
 	Add("nick_prefix_nocase", nick_prefix_nocase, false);
 	Add("nick_prefix_cc", nick_prefix_cc, false);
 	Add("nick_prefix_autoreg",nick_prefix_autoreg,string(""));
-	Add("autoreg_class", autoreg_class, -1);
+	Add("autoreg_class", autoreg_class, 0);
 	Add("nicklist_on_login", nicklist_on_login, true);
 	Add("optimize_userlist", optimize_userlist, false);
 	Add("ul_portion", ul_portion, 50);
 	// End nicklist configuration
 
 	// protocol commands length
+	Add("max_outbuf_size", max_outbuf_size, 2097152ul);
+	Add("max_outfill_size", max_outfill_size, 1310720ul);
+	Add("max_unblock_size", max_unblock_size, 1835008ul);
 	Add("max_message_size", mS.mMaxLineLength, 10240ul);
 	Add("max_len_supports", max_len_supports, 512);
 	Add("max_len_version", max_len_version, 64);
@@ -267,6 +271,7 @@ void cDCConf::AddVars()
 	Add("topic_mod_class", topic_mod_class, (int)eUC_CHEEF);
 	Add("cmd_start_op", cmd_start_op, string(DEFAULT_COMMAND_TRIGS));
 	Add("cmd_start_user", cmd_start_user, string(DEFAULT_COMMAND_TRIGS));
+	Add("unknown_cmd_chat", unknown_cmd_chat, false);
 	Add("dest_report_chat", dest_report_chat, false);
 	Add("dest_regme_chat", dest_regme_chat, false);
 	Add("dest_drop_chat", dest_drop_chat, false);
@@ -287,12 +292,14 @@ void cDCConf::AddVars()
 	Add("nullchars_report", nullchars_report, true);
 	Add("botinfo_report", botinfo_report, false);
 	Add("send_user_ip", send_user_ip, false);
-	Add("user_ip_class", user_ip_class, (int)eUC_OPERATOR);
+	Add("user_ip_class", user_ip_class, int(eUC_OPERATOR));
+	Add("oplist_class", oplist_class, int(eUC_OPERATOR));
 	Add("send_user_info", send_user_info, true);
 	Add("send_pass_request", send_pass_request, true);
 	Add("send_crash_report", send_crash_report, true);
-	Add("ban_bypass_class", ban_bypass_class, (int)eUC_MASTER);
-	// End user control configuration
+	Add("ban_bypass_class", ban_bypass_class, int(eUC_MASTER));
+	Add("chatonly_bypass_class", chatonly_bypass_class, int(eUC_OPERATOR));
+	// end of section
 
 	// Advanced hub configuration and tweaks
 	Add("extended_welcome_message", extended_welcome_message, true);
@@ -302,6 +309,7 @@ void cDCConf::AddVars()
 	Add("int_login",int_login, 60);
 	Add("max_class_int_login", max_class_int_login, (int)eUC_OPERATOR);
 	Add("max_class_check_clone", max_class_check_clone, -1); // -1 means disabled
+	Add("max_class_self_repass", max_class_self_repass, 0); // 0 means disabled
 	Add("clone_det_tban_time", clone_det_tban_time, 1800); // 30 minutes
 	Add("tban_kick", tban_kick, 300);
 	Add("tban_max", tban_max, 3600 * 24 * 30);
@@ -337,9 +345,11 @@ void cDCConf::AddVars()
 	Add("drop_invalid_key", drop_invalid_key, false);
 	Add("delayed_ping", delayed_ping, 60);
 	Add("disable_zlib", disable_zlib, true);
+	Add("zlib_compress_level", zlib_compress_level, int(Z_DEFAULT_COMPRESSION));
 	Add("zlib_min_len", zlib_min_len, 100);
 	Add("detect_ctmtohub", detect_ctmtohub, true); // ctm2hub
 	Add("disable_extjson", disable_extjson, true); // extjson
+	Add("mmdb_names_lang", mmdb_names_lang, string("")); // maxminddb names language, empty means english
 
 	static const char *to_names[] = { "key", "nick", "login", "myinfo", "flush", "setpass"};
 	double to_default[] = { 60. , 30., 600., 40., 30., 300. };
@@ -405,8 +415,7 @@ void cDCConf::AddVars()
  */
 int cDCConf::Load()
 {
-	mS.mSetupList.LoadFileTo(this,mS.mDBConf.config_name.c_str());
-	hub_version = HUB_VERSION_VERS;
+	mS.mSetupList.LoadFileTo(this, mS.mDBConf.config_name.c_str());
 	return 0;
 }
 
@@ -415,8 +424,9 @@ int cDCConf::Load()
  */
 int cDCConf::Save()
 {
-	hub_version = HUB_VERSION_VERS;
-	mS.mSetupList.SaveFileTo(this,mS.mDBConf.config_name.c_str());
+	string val_new, val_old;
+	mS.SetConfig(mS.mDBConf.config_name.c_str(), "hub_version", HUB_VERSION_VERS, val_new, val_old);
+	mS.mSetupList.SaveFileTo(this, mS.mDBConf.config_name.c_str());
 	return 0;
 }
 

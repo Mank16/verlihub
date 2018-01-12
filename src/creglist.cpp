@@ -54,6 +54,7 @@ cRegList::cRegList(cMySQL &mysql, cServerDC *server): cConfMySQL(mysql)
 	AddCol("class_hidekick", "int(2)", "0", true, mModel.mClassHideKick);
 	AddCol("hide_kick", "tinyint(1)", "0", true, mModel.mHideKick);
 	AddCol("hide_keys", "tinyint(1)", "0", true, mModel.mHideKeys);
+	AddCol("show_keys", "tinyint(1)", "0", true, mModel.mShowKeys);
 	AddCol("hide_share", "tinyint(1)", "0", true, mModel.mHideShare);
 	AddCol("hide_ctmmsg", "tinyint(1)", "0", true, mModel.mHideCtmMsg);
 	AddCol("reg_date", "int(11)", "", true, mModel.mRegDate);
@@ -157,11 +158,19 @@ bool cRegList::AddRegUser(const string &nick, cConnDC *op, int cl, const char *p
 
 
 /** No descriptions */
-bool cRegList::ChangePwd(const string &nick, const string &pwd, int crypt)
+bool cRegList::ChangePwd(const string &nick, const string &pwd, cConnDC *conn)
 {
-	if(!FindRegInfo(mModel, nick))
+	if (!FindRegInfo(mModel, nick))
 		return false;
+
 	mModel.SetPass(pwd, (cRegUserInfo::tCryptMethods)mS->mC.default_password_encryption);
+
+	if (conn) { // update last login date
+		mModel.mLoginLast = cTime().Sec();
+		mModel.mLoginIP = conn->AddrIP();
+		mModel.mLoginCount++;
+	}
+
 	return UpdatePK();
 }
 

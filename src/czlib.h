@@ -26,12 +26,13 @@
 #include <stdint.h>
 
 #define ZLIB_BUFFER_SIZE 256*1024 // deflateInit() will allocate on the order of 256K bytes for the internal state
-#define ZON_LEN 5 // $ZOn| message length
+#define ZON_LEN 5 // "$ZOn|" command length
 
 using namespace std;
 
 namespace nVerliHub {
 namespace nUtils {
+
 	/// @addtogroup Core
 	/// @{
 	/**
@@ -52,14 +53,6 @@ namespace nUtils {
 			~cZLib();
 
 			/**
-			* Append data to the internal buffer but do not compresse them.
-			*
-			* @param buffer Pointer to buffer data.
-			* @param len Data length.
-			*/
-			//void AppendData(const char *buffer, size_t len);
-
-			/**
 			* Compress the given data.
 			* If there are available data in the internal buffer,
 			* the given data is appended after the data and then
@@ -70,11 +63,20 @@ namespace nUtils {
 			* @param outLen Length of compressed data.
 			* @return Pointer to compressed data.
 			*/
-			char* Compress(const char *buffer, size_t len, size_t &outLen);
+			char* Compress(const char *buffer, size_t len, size_t &outLen, int &err, int level);
+
+			// get buffer sizes
+			size_t GetInBufLen()
+			{
+				return inBufLen;
+			}
+			size_t GetOutBufLen()
+			{
+				return outBufLen;
+			}
 		private:
 			// in buffer
 			char *inBuf;
-			//size_t inBufPos;
 			size_t inBufLen;
 			size_t inLastLen;
 
@@ -83,6 +85,7 @@ namespace nUtils {
 			size_t outBufLen;
 			size_t outLastLen;
 	};
+
 }; // namespace nUtils
 }; // namespace nVerliHub
 

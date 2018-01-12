@@ -1,6 +1,6 @@
 /*
 	Copyright (C) 2003-2005 Daniel Muller, dan at verliba dot cz
-	Copyright (C) 2006-2017 Verlihub Team, info at verlihub dot net
+	Copyright (C) 2006-2018 Verlihub Team, info at verlihub dot net
 
 	Verlihub is free software; You can redistribute it
 	and modify it under the terms of the GNU General
@@ -121,7 +121,7 @@ namespace nVerliHub {
 			eSF_USERIP2 = 1 << 12,
 			eSF_TTHSEARCH = 1 << 13,
 			eSF_FEED = 1 << 14,
-			eSF_CLIENTID = 1 << 15,
+			eSF_TTHS = 1 << 15,
 			eSF_IN = 1 << 16,
 			eSF_BANMSG = 1 << 17,
 			eSF_TLS = 1 << 18,
@@ -130,7 +130,7 @@ namespace nVerliHub {
 			eSF_FAILOVER = 1 << 21,
 			eSF_NICKCHANGE = 1 << 22,
 			eSF_CLIENTNICK = 1 << 23,
-			eSF_FEATNET = 1 << 24,
+			eSF_SEARRULE = 1 << 24,
 			eSF_ZLINE = 1 << 25,
 			eSF_GETZBLOCK = 1 << 26,
 			eSF_ACTM = 1 << 27,
@@ -193,8 +193,8 @@ namespace nVerliHub {
 				/**
 				 * Create a new connection for the given socket.
 				 * This method will also assign a protocol handler to
-				 * the cAsyncConn instance, assign a country zone if GeoIP
-				 * is installed and increment the number of the user in the hub.
+				 * the cAsyncConn instance, assign a country zone
+				 * and increment the number of the users in the hub.
 				 * @param sd Socket identifier of the connection.
 				 * @return A new connection object that is an instance of cAsyncConn class.
 				 */

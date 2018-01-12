@@ -1,6 +1,6 @@
 /*
 	Copyright (C) 2003-2005 Daniel Muller, dan at verliba dot cz
-	Copyright (C) 2006-2017 Verlihub Team, info at verlihub dot net
+	Copyright (C) 2006-2018 Verlihub Team, info at verlihub dot net
 
 	Verlihub is free software; You can redistribute it
 	and modify it under the terms of the GNU General
@@ -38,9 +38,7 @@
 #include "cdcproto.h"
 #include "csetuplist.h"
 #include "ctempfunctionbase.h"
-#ifdef HAVE_LIBGEOIP
-#include "cgeoip.h"
-#endif
+#include "cmaxminddb.h"
 #include "cusercollection.h"
 #include "cvhpluginmgr.h"
 #include "cmeanfrequency.h"
@@ -54,12 +52,15 @@
 #define BAD_NICK_CHARS_OWN "<>"
 #define DEFAULT_COMMAND_TRIGS "+!/"
 
+#define CRASH_SERV_ADDR "crash.verlihub.net"
+#define CRASH_SERV_PORT 80
+
+#define DEFAULT_HUB_ENCODING "CP1252"
+
 using namespace std;
 
 namespace nVerliHub {
-#ifdef HAVE_LIBGEOIP
-	using nUtils::cGeoIP;
-#endif
+	using nUtils::cMaxMindDB;
 	using namespace nPlugin;
 	using namespace nThread;
 	using namespace nSocket;
@@ -239,6 +240,7 @@ class cServerDC : public cAsyncSocketServer
 		cConnTypes *mConnTypes;
 		// ZLib compression class
 		cZLib *mZLib;
+		cMaxMindDB *mMaxMindDB; // maxminddb class
 		// Process name
 		string mExecPath;
 
@@ -275,9 +277,21 @@ class cServerDC : public cAsyncSocketServer
 		bool AddToList(cUser *usr);
 
 		/*
-			This method is a forwarder for ScriptAPI::OnScriptCommand
+			script command queue structures and functions
 		*/
-		void OnScriptCommand(string *cmd, string *data, string *plug, string *script);
+		struct sScriptCommand
+		{
+			string mCommand;
+			string mData;
+			string mPlugin;
+			string mScript;
+		};
+
+		typedef list<sScriptCommand*> tScriptCommands;
+		tScriptCommands mScriptCommands;
+
+		bool AddScriptCommand(string *cmd, string *data, string *plug, string *script, bool inst = false);
+		void SendScriptCommands();
 
 		/*
 			This method is a forwarder for ScriptAPI::OnScriptQuery
@@ -332,7 +346,7 @@ class cServerDC : public cAsyncSocketServer
 		/*
 			kick user and perform different actions based of flags
 		*/
-		void DCKickNick(ostream *use_os, cUser *op, const string &nick, const string &why, int flags);
+		void DCKickNick(ostream *use_os, cUser *op, const string &nick, const string &why, int flags, const string &note_op = "", const string &note_usr = "");
 
 		/*
 			Send a private message to user from other user or hub security.
@@ -451,7 +465,7 @@ class cServerDC : public cAsyncSocketServer
 		* @param cm Minimium class.
 		* @param CM Maximum class.
 		*/
-		void SendToAll(string &str, int cm,int cM);
+		void SendToAll(const string &str, int cm, int cM);
 
 		/**
 		* Send data to all users that are in userlist and belongs to the specified class range.
@@ -495,12 +509,13 @@ class cServerDC : public cAsyncSocketServer
 		/*
 			send conditional search request with filters to all users
 				conn: sender connection
-				data: search command
+				data: long search command
+				tths: short tth search command
 				passive: search mode flag
 				tth: tth search flag
 				return: send count
 		*/
-		unsigned int SearchToAll(cConnDC *conn, string &data, bool passive, bool tth);
+		unsigned int SearchToAll(cConnDC *conn, string &data, string &tths, bool passive, bool tth = true);
 
 		/*
 			ExtJSON collector
@@ -635,12 +650,6 @@ class cServerDC : public cAsyncSocketServer
 		cUserCollection mChatUsers;
 		// List of bots
 		cUserCollection mRobotList;
-
-#ifdef HAVE_LIBGEOIP
-		// GeoIp object for country code support
-		static cGeoIP sGeoIP;
-#endif
-
 		// prevent stack trace on core dump
 		static bool mStackTrace;
 
@@ -659,7 +668,7 @@ class cServerDC : public cAsyncSocketServer
 			bool mUniq;
 		};
 
-		typedef vector<sCtmToHubItem*> tCtmToHubList;
+		typedef list<sCtmToHubItem*> tCtmToHubList;
 		tCtmToHubList mCtmToHubList;
 
 		struct sCtmToHubConf
@@ -804,6 +813,8 @@ public:
 
 	// protocol total download = 0 and upload = 1
 	uint64_t mProtoTotal[2];
+	// saved upload data with zlib = 0 and tths = 1
+	uint64_t mProtoSaved[2];
 
 	// Usercount of zones (CC and IP-range zones)
 	unsigned int mUserCount[USER_ZONES + 1];

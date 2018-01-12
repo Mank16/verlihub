@@ -1,6 +1,6 @@
 /*
 	Copyright (C) 2003-2005 Daniel Muller, dan at verliba dot cz
-	Copyright (C) 2006-2017 Verlihub Team, info at verlihub dot net
+	Copyright (C) 2006-2018 Verlihub Team, info at verlihub dot net
 
 	Verlihub is free software; You can redistribute it
 	and modify it under the terms of the GNU General
@@ -194,14 +194,16 @@ public:
 	*/
 	int CmdMe(istringstream & cmd_line, nSocket::cConnDC * conn);
 
-	/**
-	* Handle +regme <password> hub command.
-	* This command sends a report to OpChat in order to ask registration to Hub Operator or register an user automatically if autoreg_class config variable is set properly.
-	* @param cmd_line The stream that contains the password.
-	* @param conn Pointer to user's connection which to send the result message.
-	* @return 0 if an error occured or 1 otherwise.
+	/*
+	* handle +regme <password> and +unregme hub commands
+	* command sends a report to operator chat in order to ask for registration or registers a user automatically if autoreg_class config is set properly
+	* also allows user to delete his own account if found
+	* cmd_line - parameter stream that contains password
+	* conn - pointer to user connection to send the result message
+	* unreg - user wans to delete his account
+	* return - 0 if an error occured or 1 otherwise
 	*/
-	int CmdRegMe(istringstream & cmd_line, nSocket::cConnDC * conn);
+	int CmdRegMe(istringstream &cmd_line, nSocket::cConnDC *conn, bool unreg = false);
 
 	/**
 	* Handle +kick <user> <reason>.
@@ -210,7 +212,7 @@ public:
 	* @param conn Pointer to user's connection which to send the result message.
 	* @return Always 1.
 	*/
-	int CmdKick(istringstream & cmd_line, nSocket::cConnDC * conn);
+	//int CmdKick(istringstream & cmd_line, nSocket::cConnDC * conn);
 
 	/**
 	* Handle +chat and +nochat hub command.
@@ -302,7 +304,7 @@ public:
 	int CmdTopic(istringstream & cmd_line, nSocket::cConnDC * conn);
 
 	static cPCRE mIPRangeRex;
-	static bool GetIPRange(const string &range, unsigned long &from, unsigned long &to);
+	static bool GetIPRange(const string &rang, unsigned long &frdr, unsigned long &todr);
 
 	typedef cDCCommand::sDCCmdFunc cfDCCmdBase;
 	typedef cDCCommand cDCCmdBase;

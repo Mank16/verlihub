@@ -1,6 +1,6 @@
 /*
 	Copyright (C) 2003-2005 Daniel Muller, dan at verliba dot cz
-	Copyright (C) 2006-2017 Verlihub Team, info at verlihub dot net
+	Copyright (C) 2006-2018 Verlihub Team, info at verlihub dot net
 
 	Verlihub is free software; You can redistribute it
 	and modify it under the terms of the GNU General
@@ -19,9 +19,6 @@
 */
 
 #include "cconndc.h"
-#ifdef HAVE_LIBGEOIP
-	#include "cgeoip.h"
-#endif
 #include "creglist.h"
 #include "creguserinfo.h"
 #include "cbanlist.h"
@@ -60,9 +57,10 @@ cConnDC::cConnDC(int sd, cAsyncSocketServer *server):
 
 cConnDC::~cConnDC()
 {
-	if(mRegInfo)
+	if (mRegInfo) {
 		delete mRegInfo;
-	mRegInfo = NULL;
+		mRegInfo = NULL;
+	}
 }
 
 bool cConnDC::SetUser(cUser *usr)
@@ -261,15 +259,21 @@ int cConnDC::CheckTimeOut(tTimeOut timeout, cTime &now)
 
 void cConnDC::OnFlushDone()
 {
-	mBufSend.erase(0,mBufSend.size());
-	if(mNickListInProgress) {
+	mBufFlush.erase(0, GetFlushSize());
+	ShrinkStringToFit(mBufFlush);
+	mBufSend.erase(0, GetBufferSize());
+	ShrinkStringToFit(mBufSend);
+
+	if (mNickListInProgress) {
 		SetLSFlag(eLS_NICKLST);
 		mNickListInProgress = false;
 		
 		if( !getok() || !mWritable) { //need check
 			if(Log(2)) LogStream() << "Connection closed during nicklist" << endl;
 		} else {
-			if(Log(2)) LogStream() << "Login after nicklist" << endl;
+			if (Log(2))
+				LogStream() << "Login after nick list send" << endl;
+
 			Server()->DoUserLogin(this);
 		}
 	}
@@ -590,49 +594,51 @@ cDCConnFactory::cDCConnFactory(cServerDC *server):
 cAsyncConn *cDCConnFactory::CreateConn(tSocket sd)
 {
 	cConnDC *conn;
-	if(!mServer)
+
+	if (!mServer)
 		return NULL;
 
 	conn = new cConnDC(sd, mServer);
 	conn->mxMyFactory = this;
-#ifdef HAVE_LIBGEOIP
-	if (
-		mServer->sGeoIP.GetCC(conn->AddrIP(),conn->mCC) &&
-		mServer->mC.cc_zone[0].size()
-	){
-		for (int i = 0; i < 3; i ++)  {
-			if((conn->mCC == mServer->mC.cc_zone[i]) || (mServer->mC.cc_zone[i].find(conn->mCC) != mServer->mC.cc_zone[i].npos)) {
-				conn->mGeoZone = i+1;
+
+	if (mServer->mMaxMindDB->GetCCC(conn->mCC, conn->mCN, conn->mCity, conn->AddrIP()) && conn->mCC.size() && mServer->mC.cc_zone[0].size()) { // get all geo data in one call
+		for (int i = 0; i < 3; i ++) {
+			if ((conn->mCC == mServer->mC.cc_zone[i]) || (mServer->mC.cc_zone[i].find(conn->mCC) != mServer->mC.cc_zone[i].npos)) {
+				conn->mGeoZone = i + 1;
 				break;
 			}
 		}
 	}
 
-	mServer->sGeoIP.GetCN(conn->AddrIP(), conn->mCN); // get country name
-	mServer->sGeoIP.GetCity(conn->mCity, conn->AddrIP()); // get city name
-#endif
 	long IPConn, IPMin, IPMax;
 	IPConn = cBanList::Ip2Num(conn->AddrIP());
-	if(mServer->mC.ip_zone4_min.size()) {
+
+	if (mServer->mC.ip_zone4_min.size()) {
 		IPMin = cBanList::Ip2Num(mServer->mC.ip_zone4_min);
 		IPMax = cBanList::Ip2Num(mServer->mC.ip_zone4_max);
-		if((IPMin <= IPConn) && (IPMax >= IPConn))
+
+		if ((IPMin <= IPConn) && (IPMax >= IPConn))
 			conn->mGeoZone = 4;
 	}
-	if(mServer->mC.ip_zone5_min.size()) {
+
+	if (mServer->mC.ip_zone5_min.size()) {
 		IPMin = cBanList::Ip2Num(mServer->mC.ip_zone5_min);
 		IPMax = cBanList::Ip2Num(mServer->mC.ip_zone5_max);
-		if((IPMin <= IPConn) && (IPMax >= IPConn))
+
+		if ((IPMin <= IPConn) && (IPMax >= IPConn))
 			conn->mGeoZone = 5;
 	}
-	if(mServer->mC.ip_zone6_min.size()) {
+
+	if (mServer->mC.ip_zone6_min.size()) {
 		IPMin = cBanList::Ip2Num(mServer->mC.ip_zone6_min);
 		IPMax = cBanList::Ip2Num(mServer->mC.ip_zone6_max);
-		if((IPMin <= IPConn) && (IPMax >= IPConn))
+
+		if ((IPMin <= IPConn) && (IPMax >= IPConn))
 			conn->mGeoZone = 6;
 	}
+
 	conn->mxProtocol = mProtocol;
-	return (cAsyncConn*) conn;
+	return (cAsyncConn*)conn;
 }
 
 void cDCConnFactory::DeleteConn(cAsyncConn * &connection)

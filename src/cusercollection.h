@@ -24,6 +24,7 @@
 #include <string>
 #include <functional>
 #include "thasharray.h"
+#include "stringutils.h"
 
 using std::string;
 using std::unary_function;
@@ -137,10 +138,13 @@ public:
 		ufDoNickList(string &List):mList(List){}
 		virtual ~ufDoNickList(){};
 
-		virtual void Clear() {
-			mList.erase(0,mList.size());
+		virtual void Clear()
+		{
+			mList.erase(0, mList.size());
+			ShrinkStringToFit(mList);
 			mList.append(mStart.data(), mStart.size());
 		}
+
 		virtual void operator() (cUserBase *usr){ AppendList(mList, usr);};
 		virtual void AppendList(string &List, cUserBase *User);
 
@@ -159,9 +163,12 @@ public:
 		ufDoINFOList(string &List, string &CompleteList):ufDoNickList(List),mListComplete(CompleteList),mComplete(false){mSep="|";}
 		virtual ~ufDoINFOList(){};
 		virtual void AppendList(string &List, cUserBase *User);
-		virtual void Clear() {
+
+		virtual void Clear()
+		{
 			ufDoNickList::Clear();
-			mListComplete.erase(0,mListComplete.size());
+			mListComplete.erase(0, mListComplete.size());
+			ShrinkStringToFit(mListComplete);
 			mListComplete.append(mStart.data(), mStart.size());
 		}
 		virtual void operator() (cUserBase *usr){
@@ -173,7 +180,7 @@ public:
 	};
 
 private:
-	//string mSendAllCache;
+	string mSendAllCache;
 	string mNickList;
 	string mINFOList;
 	string mINFOListComplete;

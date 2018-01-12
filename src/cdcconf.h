@@ -1,6 +1,6 @@
 /*
 	Copyright (C) 2003-2005 Daniel Muller, dan at verliba dot cz
-	Copyright (C) 2006-2017 Verlihub Team, info at verlihub dot net
+	Copyright (C) 2006-2018 Verlihub Team, info at verlihub dot net
 
 	Verlihub is free software; You can redistribute it
 	and modify it under the terms of the GNU General
@@ -96,6 +96,9 @@ public:
 	unsigned int max_nick;
 	unsigned int min_nick;
 	string nick_chars;
+	unsigned long max_outbuf_size;
+	unsigned long max_outfill_size;
+	unsigned long max_unblock_size;
 	unsigned int max_len_supports;
 	unsigned int max_len_version;
 	unsigned int max_len_myinfo;
@@ -136,6 +139,7 @@ public:
 	int opchat_class;
 	string cmd_start_op;
 	string cmd_start_user;
+	bool unknown_cmd_chat;
 	bool dest_report_chat;
 	bool dest_regme_chat;
 	bool dest_drop_chat;
@@ -169,6 +173,7 @@ public:
 	int min_class_redir;
 	int max_class_int_login;
 	int max_class_check_clone;
+	unsigned int max_class_self_repass;
 	bool allow_same_user;
 	int max_class_same_user;
 	bool hide_all_kicks;
@@ -269,9 +274,11 @@ public:
 	bool disable_usr_cmds;
 	bool disable_report_cmd;
 	bool disable_zlib;
+	int zlib_compress_level;
 	unsigned int zlib_min_len;
 	bool detect_ctmtohub; // ctm2hub
 	bool disable_extjson; // extjson
+	string mmdb_names_lang; // mmdb
 	int plugin_mod_class;
 	int topic_mod_class;
 	int mainchat_class;
@@ -302,15 +309,17 @@ public:
 	string cc_zone[3];
 	int show_tags; // 0 - no at all, 1 - only to ops, 2 - show to everyone
 	int show_desc_len; // cut first x bytes of description, -1 means disabled
-	int autoreg_class;
+	int autoreg_class; // todo: change to unsigned
 	bool show_email;
 	bool show_speed;
 	bool send_user_ip;
 	int user_ip_class;
+	int oplist_class;
 	bool send_user_info;
 	bool send_pass_request;
 	bool send_crash_report;
 	int ban_bypass_class;
+	int chatonly_bypass_class;
 	bool use_reglist_cache;
 	bool use_penlist_cache;
 	bool chat_default_on;

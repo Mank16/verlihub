@@ -20,6 +20,7 @@
 
 #ifndef CDCPROTO_H
 #define CDCPROTO_H
+
 #include <string>
 #include "cpcre.h"
 #include "cprotocol.h"
@@ -126,6 +127,10 @@ protected:
 	*/
 	int DC_Search(cMessageDC * msg, nSocket::cConnDC * conn);
 
+	// short active and passive tth search commands
+	int DC_SA(cMessageDC *msg, nSocket::cConnDC *conn);
+	int DC_SP(cMessageDC *msg, nSocket::cConnDC *conn);
+
 	/**
 	* Treat $SR protocol message.
 	* @param msg The parsed message.
@@ -200,7 +205,7 @@ protected:
 
 	// protocol creation helper functions, note, they all clear destination buffer before appending new data
 	static void Create_Chat(string &dest, const string &nick, const string &text);
-	static void Create_HubName(string &dest, const string &name, const string &topic);
+	static void Create_HubName(string &dest, const string &name, const string &topic = "");
 	static void Create_MyINFO(string &dest, const string &nick, const string &desc, const string &speed, const string &mail, const string &share);
 	static void Create_PM(string &dest, const string &from, const string &to, const string &sign, const string &text);
 	static void Create_PMForBroadcast(string &start, string &end, const string &from, const string &sign, const string &text);
@@ -218,6 +223,9 @@ protected:
 	static void Create_HubTopic(string &dest, const string &topic);
 	static void Create_ConnectToMe(string &dest, const string &nick, const string &addr, const string &port, const string &extra);
 	static void Create_Search(string &dest, const string &addr, const string &lims, const string &spat);
+	static void Create_Search(string &dest, const string &addr, const string &tth, bool pas = false);
+	static void Create_SA(string &dest, const string &tth, const string &addr);
+	static void Create_SP(string &dest, const string &tth, const string &nick);
 	static void Create_UserIP(string &dest, const string &list);
 	static void Create_GetPass(string &dest);
 	static void Create_BadPass(string &dest);
@@ -225,6 +233,7 @@ protected:
 	static void Create_HubIsFull(string &dest);
 	static void Create_Supports(string &dest, const string &flags);
 	static void Create_NickRule(string &dest, const string &rules);
+	static void Create_SearchRule(string &dest, const string &rules);
 
 	/**
 	* Treat mainchat messages.
@@ -358,6 +367,8 @@ protected:
 	// Direct Connect hub server
 	nSocket::cServerDC *mS;
 };
+
 	}; // namespace nProtocol
 }; // namespace nVerliHub
+
 #endif

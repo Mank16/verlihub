@@ -98,7 +98,7 @@ bool cConsole::cfVersionLuaScript::operator()()
 
 bool cConsole::cfInfoLuaScript::operator()()
 {
-	uint64_T size = 0;
+	uint64_t size = 0;
 
 	for (unsigned int i = 0; i < GetPI()->Size(); i++)
 		size += lua_gc(GetPI()->mLua[i]->mL, LUA_GCCOUNT, 0);
