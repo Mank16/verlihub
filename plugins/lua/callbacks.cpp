@@ -1,6 +1,6 @@
 /*
 	Copyright (C) 2003-2005 Daniel Muller, dan at verliba dot cz
-	Copyright (C) 2006-2017 Verlihub Team, info at verlihub dot net
+	Copyright (C) 2006-2018 Verlihub Team, info at verlihub dot net
 
 	Verlihub is free software; You can redistribute it
 	and modify it under the terms of the GNU General
@@ -18,12 +18,14 @@
 	of the GNU General Public License.
 */
 
+#define ERR_EMPT "Empty parameter"
 #define ERR_PARAM "Wrong parameters"
 #define ERR_CALL "Call error"
 #define ERR_SERV "Error getting server"
 #define ERR_LUA "Error getting Lua"
 #define ERR_PLUG "Error getting plugin"
 #define ERR_CLASS "Invalid class number"
+#define ERR_QUERY "Query is not ready"
 
 extern "C"
 {
@@ -49,98 +51,142 @@ namespace nVerliHub {
 	using namespace nEnums;
 	using namespace nLuaPlugin;
 
-cServerDC * GetCurrentVerlihub()
+cServerDC* GetCurrentVerlihub()
 {
-	return (cServerDC *)cServerDC::sCurrentServer;
+	return (cServerDC*)cServerDC::sCurrentServer;
 }
 
 int _SendToUser(lua_State *L)
 {
-	string data, nick;
+	int args = lua_gettop(L) - 1;
 
-	if(lua_gettop(L) == 3) {
-		if(!lua_isstring(L, 2))
-		{
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-		data = lua_tostring(L, 2);
-		if(!lua_isstring(L, 3))
-		{
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-		nick = lua_tostring(L, 3);
-		if(!SendDataToUser(data.c_str(), nick.c_str()))
-		{
-			luaerror(L, ERR_CALL);
-			return 2;
-		}
-	} else {
-		luaL_error(L, "Error calling VH:SendToUser; expected 2 arguments but got %d", lua_gettop(L) - 1);
+	if (args < 2) {
+		luaL_error(L, "Error calling VH:SendToUser, expected atleast 2 arguments but got %d.", args);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
+
+	if (!lua_isstring(L, 2) || !lua_isstring(L, 3) || ((args >= 3) && !lua_isnumber(L, 4))) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	string data = lua_tostring(L, 2), nick = lua_tostring(L, 3);
+
+	if (data.empty() || nick.empty()) {
+		luaerror(L, ERR_EMPT);
+		return 2;
+	}
+
+	bool delay = false;
+
+	if (args >= 3)
+		delay = (int(lua_tonumber(L, 4)) > 0);
+
+	if (!SendDataToUser(data.c_str(), nick.c_str(), delay)) {
+		luaerror(L, ERR_CALL);
+		return 2;
+	}
+
 	lua_pushboolean(L, 1);
-	return 1;
+	lua_pushnil(L);
+	return 2;
 }
 
 int _SendToClass(lua_State *L)
 {
-	string data;
-	int min_class, max_class;
+	int args = lua_gettop(L) - 1;
 
-	if(lua_gettop(L) == 4) {
-		if(!lua_isstring(L, 2)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-		data = lua_tostring(L, 2);
-		if(!lua_isnumber(L, 3)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-		min_class = (int)lua_tonumber(L, 3);
-		if(!lua_isnumber(L, 4)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-		max_class = (int)lua_tonumber(L, 4);
-		if(!SendToClass(data.c_str(), min_class, max_class)) {
-			luaerror(L, ERR_CALL);
-			return 2;
-		}
-	} else {
-		luaL_error(L, "Error calling VH:SendToClass; expected 3 arguments but got %d", lua_gettop(L) - 1);
+	if (args < 1) {
+		luaL_error(L, "Error calling VH:SendToClass, expected atleast 1 argument but got %d.", args);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
+
+	if (!lua_isstring(L, 2) || ((args >= 2) && !lua_isnumber(L, 3)) || ((args >= 3) && !lua_isnumber(L, 4)) || ((args >= 4) && !lua_isnumber(L, 5))) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	string data = lua_tostring(L, 2);
+
+	if (data.empty()) {
+		luaerror(L, ERR_EMPT);
+		return 2;
+	}
+
+	int min_class = eUC_NORMUSER;
+
+	if (args >= 2) {
+		min_class = int(lua_tonumber(L, 3));
+
+		if ((min_class < eUC_PINGER) || (min_class > eUC_MASTER) || ((min_class > eUC_ADMIN) && (min_class < eUC_MASTER))) {
+			luaerror(L, ERR_CLASS);
+			return 2;
+		}
+	}
+
+	int max_class = eUC_MASTER;
+
+	if (args >= 3) {
+		max_class = int(lua_tonumber(L, 4));
+
+		if ((max_class < eUC_PINGER) || (max_class > eUC_MASTER) || ((max_class > eUC_ADMIN) && (max_class < eUC_MASTER))) {
+			luaerror(L, ERR_CLASS);
+			return 2;
+		}
+	}
+
+	bool delay = false;
+
+	if (args >= 4)
+		delay = (int(lua_tonumber(L, 5)) > 0);
+
+	if (!SendToClass(data.c_str(), min_class, max_class, delay)) {
+		luaerror(L, ERR_CALL);
+		return 2;
+	}
+
 	lua_pushboolean(L, 1);
-	return 1;
+	lua_pushnil(L);
+	return 2;
 }
 
 int _SendToAll(lua_State *L)
 {
-	string data;
+	int args = lua_gettop(L) - 1;
 
-	if(lua_gettop(L) == 2) {
-		if(!lua_isstring(L, 2)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-		data = lua_tostring(L, 2);
-		if(!SendToAll(data.c_str())) {
-			luaerror(L, ERR_CALL);
-			return 2;
-		}
-	} else {
-		luaL_error(L, "Error calling VH:SendToAll; expected 1 argument but got %d", lua_gettop(L) - 1);
+	if (args < 1) {
+		luaL_error(L, "Error calling VH:SendToAll, expected atleast 1 argument but got %d.", args);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
+
+	if (!lua_isstring(L, 2) || ((args >= 2) && !lua_isnumber(L, 3))) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	string data = lua_tostring(L, 2);
+
+	if (data.empty()) {
+		luaerror(L, ERR_EMPT);
+		return 2;
+	}
+
+	bool delay = false;
+
+	if (args >= 2)
+		delay = (int(lua_tonumber(L, 3)) > 0);
+
+	if (!SendToAll(data.c_str(), delay)) {
+		luaerror(L, ERR_CALL);
+		return 2;
+	}
+
 	lua_pushboolean(L, 1);
 	lua_pushnil(L);
 	return 2;
@@ -148,179 +194,253 @@ int _SendToAll(lua_State *L)
 
 int _SendToActive(lua_State *L)
 {
-	if (lua_gettop(L) == 2) {
-		if (!lua_isstring(L, 2)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
+	int args = lua_gettop(L) - 1;
 
-		string data = lua_tostring(L, 2);
-
-		if (!SendToActive(data.c_str())) {
-			luaerror(L, ERR_CALL);
-			return 2;
-		}
-	} else {
-		luaL_error(L, "Error calling VH:SendToActive, expected 1 argument but got %d.", lua_gettop(L) - 1);
+	if (args < 1) {
+		luaL_error(L, "Error calling VH:SendToActive, expected atleast 1 argument but got %d.", args);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
 
+	if (!lua_isstring(L, 2) || ((args >= 2) && !lua_isnumber(L, 3))) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	string data = lua_tostring(L, 2);
+
+	if (data.empty()) {
+		luaerror(L, ERR_EMPT);
+		return 2;
+	}
+
+	bool delay = false;
+
+	if (args >= 2)
+		delay = (int(lua_tonumber(L, 3)) > 0);
+
+	if (!SendToActive(data.c_str(), delay)) {
+		luaerror(L, ERR_CALL);
+		return 2;
+	}
+
 	lua_pushboolean(L, 1);
-	return 1;
+	lua_pushnil(L);
+	return 2;
 }
 
 int _SendToActiveClass(lua_State *L)
 {
-	if (lua_gettop(L) == 4) {
-		if (!lua_isstring(L, 2)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
+	int args = lua_gettop(L) - 1;
 
-		string data = lua_tostring(L, 2);
-
-		if (!lua_isnumber(L, 3)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-
-		int min_class = (int)lua_tonumber(L, 3);
-
-		if (!lua_isnumber(L, 4)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-
-		int max_class = (int)lua_tonumber(L, 4);
-
-		if (!SendToActiveClass(data.c_str(), min_class, max_class)) {
-			luaerror(L, ERR_CALL);
-			return 2;
-		}
-	} else {
-		luaL_error(L, "Error calling VH:SendToActiveClass, expected 3 arguments but got %d.", lua_gettop(L) - 1);
+	if (args < 1) {
+		luaL_error(L, "Error calling VH:SendToActiveClass, expected atleast 1 argument but got %d.", args);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
 
+	if (!lua_isstring(L, 2) || ((args >= 2) && !lua_isnumber(L, 3)) || ((args >= 3) && !lua_isnumber(L, 4)) || ((args >= 4) && !lua_isnumber(L, 5))) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	string data = lua_tostring(L, 2);
+
+	if (data.empty()) {
+		luaerror(L, ERR_EMPT);
+		return 2;
+	}
+
+	int min_class = eUC_NORMUSER;
+
+	if (args >= 2) {
+		min_class = int(lua_tonumber(L, 3));
+
+		if ((min_class < eUC_PINGER) || (min_class > eUC_MASTER) || ((min_class > eUC_ADMIN) && (min_class < eUC_MASTER))) {
+			luaerror(L, ERR_CLASS);
+			return 2;
+		}
+	}
+
+	int max_class = eUC_MASTER;
+
+	if (args >= 3) {
+		max_class = int(lua_tonumber(L, 4));
+
+		if ((max_class < eUC_PINGER) || (max_class > eUC_MASTER) || ((max_class > eUC_ADMIN) && (max_class < eUC_MASTER))) {
+			luaerror(L, ERR_CLASS);
+			return 2;
+		}
+	}
+
+	bool delay = false;
+
+	if (args >= 4)
+		delay = (int(lua_tonumber(L, 5)) > 0);
+
+	if (!SendToActiveClass(data.c_str(), min_class, max_class, delay)) {
+		luaerror(L, ERR_CALL);
+		return 2;
+	}
+
 	lua_pushboolean(L, 1);
-	return 1;
+	lua_pushnil(L);
+	return 2;
 }
 
 int _SendToPassive(lua_State *L)
 {
-	if (lua_gettop(L) == 2) {
-		if (!lua_isstring(L, 2)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
+	int args = lua_gettop(L) - 1;
 
-		string data = lua_tostring(L, 2);
-
-		if (!SendToPassive(data.c_str())) {
-			luaerror(L, ERR_CALL);
-			return 2;
-		}
-	} else {
-		luaL_error(L, "Error calling VH:SendToPassive, expected 1 argument but got %d.", lua_gettop(L) - 1);
+	if (args < 1) {
+		luaL_error(L, "Error calling VH:SendToPassive, expected atleast 1 argument but got %d.", args);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
 
+	if (!lua_isstring(L, 2) || ((args >= 2) && !lua_isnumber(L, 3))) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	string data = lua_tostring(L, 2);
+
+	if (data.empty()) {
+		luaerror(L, ERR_EMPT);
+		return 2;
+	}
+
+	bool delay = false;
+
+	if (args >= 2)
+		delay = (int(lua_tonumber(L, 3)) > 0);
+
+	if (!SendToPassive(data.c_str(), delay)) {
+		luaerror(L, ERR_CALL);
+		return 2;
+	}
+
 	lua_pushboolean(L, 1);
-	return 1;
+	lua_pushnil(L);
+	return 2;
 }
 
 int _SendToPassiveClass(lua_State *L)
 {
-	if (lua_gettop(L) == 4) {
-		if (!lua_isstring(L, 2)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
+	int args = lua_gettop(L) - 1;
 
-		string data = lua_tostring(L, 2);
-
-		if (!lua_isnumber(L, 3)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-
-		int min_class = (int)lua_tonumber(L, 3);
-
-		if (!lua_isnumber(L, 4)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-
-		int max_class = (int)lua_tonumber(L, 4);
-
-		if (!SendToPassiveClass(data.c_str(), min_class, max_class)) {
-			luaerror(L, ERR_CALL);
-			return 2;
-		}
-	} else {
-		luaL_error(L, "Error calling VH:SendToPassiveClass, expected 3 arguments but got %d.", lua_gettop(L) - 1);
+	if (args < 1) {
+		luaL_error(L, "Error calling VH:SendToPassiveClass, expected atleast 1 argument but got %d.", args);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
 
+	if (!lua_isstring(L, 2) || ((args >= 2) && !lua_isnumber(L, 3)) || ((args >= 3) && !lua_isnumber(L, 4)) || ((args >= 4) && !lua_isnumber(L, 5))) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	string data = lua_tostring(L, 2);
+
+	if (data.empty()) {
+		luaerror(L, ERR_EMPT);
+		return 2;
+	}
+
+	int min_class = eUC_NORMUSER;
+
+	if (args >= 2) {
+		min_class = int(lua_tonumber(L, 3));
+
+		if ((min_class < eUC_PINGER) || (min_class > eUC_MASTER) || ((min_class > eUC_ADMIN) && (min_class < eUC_MASTER))) {
+			luaerror(L, ERR_CLASS);
+			return 2;
+		}
+	}
+
+	int max_class = eUC_MASTER;
+
+	if (args >= 3) {
+		max_class = int(lua_tonumber(L, 4));
+
+		if ((max_class < eUC_PINGER) || (max_class > eUC_MASTER) || ((max_class > eUC_ADMIN) && (max_class < eUC_MASTER))) {
+			luaerror(L, ERR_CLASS);
+			return 2;
+		}
+	}
+
+	bool delay = false;
+
+	if (args >= 4)
+		delay = (int(lua_tonumber(L, 5)) > 0);
+
+	if (!SendToPassiveClass(data.c_str(), min_class, max_class, delay)) {
+		luaerror(L, ERR_CALL);
+		return 2;
+	}
+
 	lua_pushboolean(L, 1);
-	return 1;
+	lua_pushnil(L);
+	return 2;
 }
 
 int _SendPMToAll(lua_State *L)
 {
-	string data, from;
-	int min_class = 0, max_class = 10;
+	int args = lua_gettop(L) - 1;
 
-	if(lua_gettop(L) >= 2) {
-		if(!lua_isstring(L, 2)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-		data = lua_tostring(L, 2);
-		if(!lua_isstring(L, 3)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-		from = lua_tostring(L, 3);
-
-		if(lua_isnumber(L, 4)) {
-			min_class = (int) lua_tonumber(L, 4);
-		}
-
-		if(lua_isnumber(L, 5)) {
-			max_class = (int) lua_tonumber(L, 5);
-		}
-
-		/*
-		string start, end;
-		cServerDC *server = GetCurrentVerlihub();
-
-		if(server == NULL) {
-			luaerror(L, ERR_SERV);
-			return 2;
-		}
-
-		server->mP.Create_PMForBroadcast(start, end, from, from, data);
-		server->SendToAllWithNick(start, end, min_class, max_class);
-		*/
-
-		SendPMToAll(data.c_str(), from.c_str(), min_class, max_class);
-	} else {
-		luaL_error(L, "Error calling VH:SendPMToAll; expected at least 4 arguments but got %d", lua_gettop(L) - 1);
+	if (args < 2) {
+		luaL_error(L, "Error calling VH:SendPMToAll, expected atleast 2 argument but got %d.", args);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
+
+	if (!lua_isstring(L, 2) || !lua_isstring(L, 3) || ((args >= 3) && !lua_isnumber(L, 4)) || ((args >= 4) && !lua_isnumber(L, 5))) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	string data = lua_tostring(L, 2), from = lua_tostring(L, 3); // todo: make from nick optional, use hub security nick
+
+	if (data.empty() || from.empty()) {
+		luaerror(L, ERR_EMPT);
+		return 2;
+	}
+
+	int min_class = eUC_NORMUSER;
+
+	if (args >= 3) {
+		min_class = int(lua_tonumber(L, 4));
+
+		if ((min_class < eUC_PINGER) || (min_class > eUC_MASTER) || ((min_class > eUC_ADMIN) && (min_class < eUC_MASTER))) {
+			luaerror(L, ERR_CLASS);
+			return 2;
+		}
+	}
+
+	int max_class = eUC_MASTER;
+
+	if (args >= 4) {
+		max_class = int(lua_tonumber(L, 5));
+
+		if ((max_class < eUC_PINGER) || (max_class > eUC_MASTER) || ((max_class > eUC_ADMIN) && (max_class < eUC_MASTER))) {
+			luaerror(L, ERR_CLASS);
+			return 2;
+		}
+	}
+
+	if (!SendPMToAll(data.c_str(), from.c_str(), min_class, max_class)) {
+		luaerror(L, ERR_CALL);
+		return 2;
+	}
+
 	lua_pushboolean(L, 1);
-	return 1;
+	lua_pushnil(L);
+	return 2;
 }
 
 int _SendToChat(lua_State *L)
@@ -334,23 +454,28 @@ int _SendToChat(lua_State *L)
 		return 2;
 	}
 
-	if (!lua_isstring(L, 2) || !lua_isstring(L, 3)) {
+	if (!lua_isstring(L, 2) || !lua_isstring(L, 3) || ((args >= 4) && (!lua_isnumber(L, 4) || !lua_isnumber(L, 5)))) {
 		luaerror(L, ERR_PARAM);
 		return 2;
 	}
 
-	if ((args >= 4) && (!lua_isnumber(L, 4) || !lua_isnumber(L, 5))) {
-		luaerror(L, ERR_PARAM);
+	string nick = lua_tostring(L, 2), text = lua_tostring(L, 3);
+
+	if (nick.empty() || text.empty()) {
+		luaerror(L, ERR_EMPT);
 		return 2;
 	}
 
-	string nick = lua_tostring(L, 2);
-	string text = lua_tostring(L, 3);
-	int min_class = 0, max_class = 10;
+	int min_class = eUC_NORMUSER, max_class = eUC_MASTER;
 
 	if (args >= 4) {
-		min_class = (int)lua_tonumber(L, 4);
-		max_class = (int)lua_tonumber(L, 5);
+		min_class = int(lua_tonumber(L, 4));
+		max_class = int(lua_tonumber(L, 5));
+
+		if ((min_class < eUC_PINGER) || (min_class > eUC_MASTER) || ((min_class > eUC_ADMIN) && (min_class < eUC_MASTER)) || (max_class < eUC_PINGER) || (max_class > eUC_MASTER) || ((max_class > eUC_ADMIN) && (max_class < eUC_MASTER))) {
+			luaerror(L, ERR_CLASS);
+			return 2;
+		}
 	}
 
 	if (!SendToChat(nick.c_str(), text.c_str(), min_class, max_class)) {
@@ -382,11 +507,11 @@ int _SendToOpChat(lua_State *L)
 	string data = lua_tostring(L, 2);
 
 	if (data.empty()) {
-		luaerror(L, ERR_CALL);
+		luaerror(L, ERR_EMPT);
 		return 2;
 	}
 
-	string nick("");
+	string nick;
 
 	if (args >= 2)
 		nick = lua_tostring(L, 3);
@@ -599,7 +724,6 @@ int _GetUserCity(lua_State *L)
 	return 2;
 }
 
-#ifdef HAVE_LIBGEOIP
 int _GetIPCC(lua_State *L)
 {
 	if (lua_gettop(L) < 2) {
@@ -690,9 +814,48 @@ int _GetIPCity(lua_State *L)
 	string ip = lua_tostring(L, 2);
 	string city;
 
-	if (serv->sGeoIP.GetCity(city, ip, db)) {
+	if (serv->mMaxMindDB->GetCity(city, ip, db)) {
 		lua_pushboolean(L, 1);
 		lua_pushstring(L, city.c_str());
+	} else {
+		lua_pushboolean(L, 0);
+		lua_pushnil(L);
+	}
+
+	return 2;
+}
+
+int _GetIPASN(lua_State *L)
+{
+	int args = lua_gettop(L) - 1;
+
+	if (args < 1) {
+		luaL_error(L, "Error calling VH:GetIPASN, expected atleast 1 argument but got %d.", args);
+		lua_pushboolean(L, 0);
+		lua_pushnil(L);
+		return 2;
+	}
+
+	cServerDC *serv = GetCurrentVerlihub();
+
+	if (!serv) {
+		luaerror(L, ERR_SERV);
+		return 2;
+	}
+
+	if (!lua_isstring(L, 2) || ((args > 1) && !lua_isstring(L, 3))) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	string ip = lua_tostring(L, 2), db, asn;
+
+	if (args > 1)
+		db = lua_tostring(L, 3);
+
+	if (serv->mMaxMindDB->GetASN(asn, ip, db)) {
+		lua_pushboolean(L, 1);
+		lua_pushstring(L, asn.c_str());
 	} else {
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
@@ -742,10 +905,10 @@ int _GetUserGeoIP(lua_State *L)
 	}
 
 	string geo_host, geo_ran_lo, geo_ran_hi, geo_cc, geo_ccc, geo_cn, geo_reg_code, geo_reg_name, geo_tz, geo_cont, geo_city, geo_post;
-	float geo_lat, geo_lon;
-	int geo_met, geo_area;
+	double geo_lat, geo_lon;
+	unsigned short geo_met, geo_area;
 
-	if (serv->sGeoIP.GetGeoIP(geo_host, geo_ran_lo, geo_ran_hi, geo_cc, geo_ccc, geo_cn, geo_reg_code, geo_reg_name, geo_tz, geo_cont, geo_city, geo_post, geo_lat, geo_lon, geo_met, geo_area, usr->mxConn->AddrIP(), db)) {
+	if (serv->mMaxMindDB->GetGeoIP(geo_host, geo_ran_lo, geo_ran_hi, geo_cc, geo_ccc, geo_cn, geo_reg_code, geo_reg_name, geo_tz, geo_cont, geo_city, geo_post, geo_lat, geo_lon, geo_met, geo_area, usr->mxConn->AddrIP(), db)) {
 		lua_pushboolean(L, 1);
 		lua_newtable(L);
 		int x = lua_gettop(L);
@@ -821,19 +984,19 @@ int _GetUserGeoIP(lua_State *L)
 		lua_rawset(L, x);
 
 		lua_pushliteral(L, "latitude");
-		lua_pushnumber(L, (float)geo_lat);
+		lua_pushnumber(L, (double)geo_lat);
 		lua_rawset(L, x);
 
 		lua_pushliteral(L, "longitude");
-		lua_pushnumber(L, (float)geo_lon);
+		lua_pushnumber(L, (double)geo_lon);
 		lua_rawset(L, x);
 
 		lua_pushliteral(L, "metro_code");
-		lua_pushnumber(L, (int)geo_met);
+		lua_pushnumber(L, (unsigned short)geo_met);
 		lua_rawset(L, x);
 
 		lua_pushliteral(L, "area_code");
-		lua_pushnumber(L, (int)geo_area);
+		lua_pushnumber(L, (unsigned short)geo_area);
 		lua_rawset(L, x);
 	} else {
 		lua_pushboolean(L, 0);
@@ -941,10 +1104,10 @@ int _GetHostGeoIP(lua_State *L)
 	}
 
 	string geo_host, geo_ran_lo, geo_ran_hi, geo_cc, geo_ccc, geo_cn, geo_reg_code, geo_reg_name, geo_tz, geo_cont, geo_city, geo_post;
-	float geo_lat, geo_lon;
-	int geo_met, geo_area;
+	double geo_lat, geo_lon;
+	unsigned short geo_met, geo_area;
 
-	if (serv->sGeoIP.GetGeoIP(geo_host, geo_ran_lo, geo_ran_hi, geo_cc, geo_ccc, geo_cn, geo_reg_code, geo_reg_name, geo_tz, geo_cont, geo_city, geo_post, geo_lat, geo_lon, geo_met, geo_area, host, db)) {
+	if (serv->mMaxMindDB->GetGeoIP(geo_host, geo_ran_lo, geo_ran_hi, geo_cc, geo_ccc, geo_cn, geo_reg_code, geo_reg_name, geo_tz, geo_cont, geo_city, geo_post, geo_lat, geo_lon, geo_met, geo_area, host, db)) {
 		lua_pushboolean(L, 1);
 		lua_newtable(L);
 		int x = lua_gettop(L);
@@ -1020,19 +1183,19 @@ int _GetHostGeoIP(lua_State *L)
 		lua_rawset(L, x);
 
 		lua_pushliteral(L, "latitude");
-		lua_pushnumber(L, (float)geo_lat);
+		lua_pushnumber(L, (double)geo_lat);
 		lua_rawset(L, x);
 
 		lua_pushliteral(L, "longitude");
-		lua_pushnumber(L, (float)geo_lon);
+		lua_pushnumber(L, (double)geo_lon);
 		lua_rawset(L, x);
 
 		lua_pushliteral(L, "metro_code");
-		lua_pushnumber(L, (int)geo_met);
+		lua_pushnumber(L, (unsigned short)geo_met);
 		lua_rawset(L, x);
 
 		lua_pushliteral(L, "area_code");
-		lua_pushnumber(L, (int)geo_area);
+		lua_pushnumber(L, (unsigned short)geo_area);
 		lua_rawset(L, x);
 	} else {
 		lua_pushboolean(L, 0);
@@ -1106,7 +1269,6 @@ int _GetHostGeoIP(lua_State *L)
 
 	return 2;
 }
-#endif
 
 int _GetNickList(lua_State *L)
 {
@@ -1416,7 +1578,7 @@ int _InUserSupports(lua_State *L)
 
 	cServerDC *serv = GetCurrentVerlihub();
 
-	if (serv == NULL) {
+	if (!serv) {
 		luaerror(L, ERR_SERV);
 		return 2;
 	}
@@ -1428,45 +1590,45 @@ int _InUserSupports(lua_State *L)
 
 	string nick = lua_tostring(L, 2);
 	string flag = lua_tostring(L, 3);
-	cUser *usr = serv->mUserList.GetUserByNick(nick);
+	cUser *user = serv->mUserList.GetUserByNick(nick);
 
-	if ((usr == NULL) || (usr->mxConn == NULL)) {
+	if (!user || !user->mxConn) {
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
 
 	if (
-	((flag == "OpPlus") && (usr->mxConn->mFeatures & eSF_OPPLUS)) ||
-	((flag == "NoHello") && (usr->mxConn->mFeatures & eSF_NOHELLO)) ||
-	((flag == "NoGetINFO") && (usr->mxConn->mFeatures & eSF_NOGETINFO)) ||
-	((flag == "DHT0") && (usr->mxConn->mFeatures & eSF_DHT0)) ||
-	((flag == "QuickList") && (usr->mxConn->mFeatures & eSF_QUICKLIST)) ||
-	((flag == "BotINFO") && (usr->mxConn->mFeatures & eSF_BOTINFO)) ||
-	(((flag == "ZPipe0") || (flag == "ZPipe")) && (usr->mxConn->mFeatures & eSF_ZLIB)) ||
-	((flag == "ChatOnly") && (usr->mxConn->mFeatures & eSF_CHATONLY)) ||
-	((flag == "MCTo") && (usr->mxConn->mFeatures & eSF_MCTO)) ||
-	((flag == "UserCommand") && (usr->mxConn->mFeatures & eSF_USERCOMMAND)) ||
-	((flag == "BotList") && (usr->mxConn->mFeatures & eSF_BOTLIST)) ||
-	((flag == "HubTopic") && (usr->mxConn->mFeatures & eSF_HUBTOPIC)) ||
-	((flag == "UserIP2") && (usr->mxConn->mFeatures & eSF_USERIP2)) ||
-	((flag == "TTHSearch") && (usr->mxConn->mFeatures & eSF_TTHSEARCH)) ||
-	((flag == "Feed") && (usr->mxConn->mFeatures & eSF_FEED)) ||
-//	((flag == "ClientID") && (usr->mxConn->mFeatures & eSF_CLIENTID)) ||
-	((flag == "IN") && (usr->mxConn->mFeatures & eSF_IN)) ||
-	((flag == "BanMsg") && (usr->mxConn->mFeatures & eSF_BANMSG)) ||
-	((flag == "TLS") && (usr->mxConn->mFeatures & eSF_TLS)) ||
-	((flag == "FailOver") && (usr->mxConn->mFeatures & eSF_FAILOVER)) ||
-	((flag == "NickChange") && (usr->mxConn->mFeatures & eSF_NICKCHANGE)) ||
-	((flag == "ClientNick") && (usr->mxConn->mFeatures & eSF_CLIENTNICK)) ||
-	//((flag == "FeaturedNetworks") && (usr->mxConn->mFeatures & eSF_FEATNET)) ||
-	((flag == "ZLine") && (usr->mxConn->mFeatures & eSF_ZLINE)) ||
-	((flag == "GetZBlock") && (usr->mxConn->mFeatures & eSF_GETZBLOCK)) ||
-	((flag == "ACTM") && (usr->mxConn->mFeatures & eSF_ACTM)) ||
-	((flag == "SaltPass") && (usr->mxConn->mFeatures & eSF_SALTPASS)) ||
-	((flag == "NickRule") && (usr->mxConn->mFeatures & eSF_NICKRULE)) ||
-	((flag == "HubURL") && (usr->mxConn->mFeatures & eSF_HUBURL)) ||
-	((flag == "ExtJSON2") && (usr->mxConn->mFeatures & eSF_EXTJSON2))
+		((flag == "OpPlus") && (user->mxConn->mFeatures & eSF_OPPLUS)) ||
+		((flag == "NoHello") && (user->mxConn->mFeatures & eSF_NOHELLO)) ||
+		((flag == "NoGetINFO") && (user->mxConn->mFeatures & eSF_NOGETINFO)) ||
+		((flag == "DHT0") && (user->mxConn->mFeatures & eSF_DHT0)) ||
+		((flag == "QuickList") && (user->mxConn->mFeatures & eSF_QUICKLIST)) ||
+		((flag == "BotINFO") && (user->mxConn->mFeatures & eSF_BOTINFO)) ||
+		(((flag == "ZPipe0") || (flag == "ZPipe")) && (user->mxConn->mFeatures & eSF_ZLIB)) ||
+		((flag == "ChatOnly") && (user->mxConn->mFeatures & eSF_CHATONLY)) ||
+		((flag == "MCTo") && (user->mxConn->mFeatures & eSF_MCTO)) ||
+		((flag == "UserCommand") && (user->mxConn->mFeatures & eSF_USERCOMMAND)) ||
+		((flag == "BotList") && (user->mxConn->mFeatures & eSF_BOTLIST)) ||
+		((flag == "HubTopic") && (user->mxConn->mFeatures & eSF_HUBTOPIC)) ||
+		((flag == "UserIP2") && (user->mxConn->mFeatures & eSF_USERIP2)) ||
+		((flag == "TTHSearch") && (user->mxConn->mFeatures & eSF_TTHSEARCH)) ||
+		((flag == "Feed") && (user->mxConn->mFeatures & eSF_FEED)) ||
+		((flag == "TTHS") && (user->mxConn->mFeatures & eSF_TTHS)) ||
+		((flag == "IN") && (user->mxConn->mFeatures & eSF_IN)) ||
+		((flag == "BanMsg") && (user->mxConn->mFeatures & eSF_BANMSG)) ||
+		((flag == "TLS") && (user->mxConn->mFeatures & eSF_TLS)) ||
+		((flag == "FailOver") && (user->mxConn->mFeatures & eSF_FAILOVER)) ||
+		((flag == "NickChange") && (user->mxConn->mFeatures & eSF_NICKCHANGE)) ||
+		((flag == "ClientNick") && (user->mxConn->mFeatures & eSF_CLIENTNICK)) ||
+		((flag == "ZLine") && (user->mxConn->mFeatures & eSF_ZLINE)) ||
+		((flag == "GetZBlock") && (user->mxConn->mFeatures & eSF_GETZBLOCK)) ||
+		((flag == "ACTM") && (user->mxConn->mFeatures & eSF_ACTM)) ||
+		((flag == "SaltPass") && (user->mxConn->mFeatures & eSF_SALTPASS)) ||
+		((flag == "NickRule") && (user->mxConn->mFeatures & eSF_NICKRULE)) ||
+		((flag == "SearchRule") && (user->mxConn->mFeatures & eSF_SEARRULE)) ||
+		((flag == "HubURL") && (user->mxConn->mFeatures & eSF_HUBURL)) ||
+		((flag == "ExtJSON2") && (user->mxConn->mFeatures & eSF_EXTJSON2))
 	) {
 		lua_pushboolean(L, 1);
 		lua_pushboolean(L, 1);
@@ -1484,7 +1646,7 @@ int _Ban(lua_State *L)
 	unsigned howlong;
 	int bantype;
 
-	if(lua_gettop(L) == 6)
+	if(lua_gettop(L) == 6) // todo: add operator and user notes
 	{
 		if(!lua_isstring(L, 2)) {
 			luaerror(L, ERR_PARAM);
@@ -1528,50 +1690,49 @@ int _Ban(lua_State *L)
 
 int _KickUser(lua_State *L)
 {
-	string nick, op, data;
+	int args = lua_gettop(L) - 1;
 
-	if(lua_gettop(L) == 4)
-	{
-		if(!lua_isstring(L, 2))
-		{
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-		op = lua_tostring(L, 2);
-		if(!lua_isstring(L, 3))
-		{
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-		nick = lua_tostring(L, 3);
-		if(!lua_isstring(L, 4))
-		{
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-		data = lua_tostring(L, 4);
-		if(!KickUser(op.c_str(), nick.c_str(), data.c_str()))
-		{
-			//lua_pushboolean(L, 0);
-			luaerror(L, ERR_CALL);
-			return 2;
-		}
-	}
-	else
-	{
-		luaL_error(L, "Error calling VH:KickUser; expected 3 argument but got %d", lua_gettop(L) - 1);
+	if (args < 3) {
+		luaL_error(L, "Error calling VH:KickUser, expected atleast 3 arguments but got %d.", args);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
+
+	if (!lua_isstring(L, 2) || !lua_isstring(L, 3) ||!lua_isstring(L, 4) || ((args >= 4) && !lua_isstring(L, 5)) || ((args >= 5) && !lua_isstring(L, 6))) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	string oper = lua_tostring(L, 2), nick = lua_tostring(L, 3), why = lua_tostring(L, 4), note_op, note_usr;
+
+	if (nick.empty() || oper.empty()) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	if (args >= 4)
+		note_op = lua_tostring(L, 5);
+
+	if (args >= 5)
+		note_usr = lua_tostring(L, 6);
+
+	if (!KickUser(oper.c_str(), nick.c_str(), why.c_str(), (note_op.size() ? note_op.c_str() : NULL), (note_usr.size() ? note_usr.c_str() : NULL))) {
+		luaerror(L, ERR_CALL);
+		return 2;
+	}
+
 	lua_pushboolean(L, 1);
-	return 1;
+	lua_pushnil(L);
+	return 2;
 }
 
 int _KickRedirUser(lua_State *L)
 {
-	if (lua_gettop(L) < 3) {
-		luaL_error(L, "Error calling VH:KickRedirUser, expected 4 arguments but got %d.", lua_gettop(L) - 1);
+	int args = lua_gettop(L) - 1;
+
+	if (args < 4) {
+		luaL_error(L, "Error calling VH:KickRedirUser, expected atleast 4 arguments but got %d.", lua_gettop(L) - 1);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
@@ -1584,15 +1745,24 @@ int _KickRedirUser(lua_State *L)
 		return 2;
 	}
 
-	if (!lua_isstring(L, 2) || !lua_isstring(L, 3) || !lua_isstring(L, 4) || !lua_isstring(L, 5)) {
+	if (!lua_isstring(L, 2) || !lua_isstring(L, 3) || !lua_isstring(L, 4) || !lua_isstring(L, 5) || ((args >= 5) && !lua_isstring(L, 6)) || ((args >= 6) && !lua_isstring(L, 7))) {
 		luaerror(L, ERR_PARAM);
 		return 2;
 	}
 
-	string niop = lua_tostring(L, 2);
-	string nius = lua_tostring(L, 3);
-	string reas = lua_tostring(L, 4);
-	string addr = lua_tostring(L, 5);
+	string niop = lua_tostring(L, 2), nius = lua_tostring(L, 3), why = lua_tostring(L, 4), addr = lua_tostring(L, 5), note_op, note_usr;
+
+	if (niop.empty() || nius.empty() || addr.empty()) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	if (args >= 5)
+		note_op = lua_tostring(L, 6);
+
+	if (args >= 6)
+		note_usr = lua_tostring(L, 7);
+
 	cUser *oper = serv->mUserList.GetUserByNick(niop);
 
 	if (!oper) {
@@ -1610,7 +1780,7 @@ int _KickRedirUser(lua_State *L)
 	}
 
 	user->mxConn->mCloseRedirect = addr; // set redirect
-	serv->DCKickNick(NULL, oper, nius, reas, (eKI_CLOSE | eKI_WHY | eKI_PM | eKI_BAN)); // kick user
+	serv->DCKickNick(NULL, oper, nius, why, (eKI_CLOSE | eKI_WHY | eKI_PM | eKI_BAN), note_op, note_usr); // kick user
 	lua_pushboolean(L, 1);
 	lua_pushnil(L);
 	return 2;
@@ -1875,7 +2045,7 @@ int _RegBot(lua_State *L)
 	serv->mUserList.SendToAll(robot->mMyINFO, serv->mC.delayed_myinfo, true); // send myinfo
 	serv->mInProgresUsers.SendToAll(robot->mMyINFO, serv->mC.delayed_myinfo, true);
 
-	if (robot->mClass >= eUC_OPERATOR) { // send short oplist
+	if (robot->mClass >= serv->mC.oplist_class) { // send short oplist
 		serv->mP.Create_OpList(msg, robot->mNick);
 		serv->mUserList.SendToAll(msg, serv->mC.delayed_myinfo, true);
 		serv->mInProgresUsers.SendToAll(msg, serv->mC.delayed_myinfo, true);
@@ -1986,8 +2156,6 @@ int _EditBot(lua_State *L)
 	}
 
 	if (robot->mClass != iclass) { // different class
-		string msg;
-
 		if ((robot->mClass < serv->mC.opchat_class) && (iclass >= serv->mC.opchat_class)) { // add to opchat list
 			if (!serv->mOpchatList.ContainsNick(nick))
 				serv->mOpchatList.Add(robot);
@@ -1996,22 +2164,24 @@ int _EditBot(lua_State *L)
 				serv->mOpchatList.Remove(robot);
 		}
 
-		if ((robot->mClass < eUC_OPERATOR) && (iclass >= eUC_OPERATOR)) { // changing from user to op
-			if (!serv->mOpList.ContainsNick(nick)) // add to oplist
+		string msg;
+
+		if ((robot->mClass < serv->mC.oplist_class) && (iclass >= serv->mC.oplist_class)) { // changing from user to op
+			if (!serv->mOpList.ContainsNick(nick)) { // add to oplist
 				serv->mOpList.Add(robot);
-
-			serv->mP.Create_OpList(msg, robot->mNick); // send short oplist to users
-			serv->mUserList.SendToAll(msg, serv->mC.delayed_myinfo, true);
-			serv->mInProgresUsers.SendToAll(msg, serv->mC.delayed_myinfo, true);
-		} else if ((robot->mClass >= eUC_OPERATOR) && (iclass < eUC_OPERATOR)) { // changing from op to user
-			if (serv->mOpList.ContainsNick(nick)) // remove from oplist
+				serv->mP.Create_OpList(msg, robot->mNick); // send short oplist to users
+				serv->mUserList.SendToAll(msg, serv->mC.delayed_myinfo, true);
+				serv->mInProgresUsers.SendToAll(msg, serv->mC.delayed_myinfo, true);
+			}
+		} else if ((robot->mClass >= serv->mC.oplist_class) && (iclass < serv->mC.oplist_class)) { // changing from op to user
+			if (serv->mOpList.ContainsNick(nick)) { // remove from oplist
 				serv->mOpList.Remove(robot);
-
-			serv->mP.Create_Quit(msg, robot->mNick); // send quit to users
-			serv->mUserList.SendToAll(msg, serv->mC.delayed_myinfo, true);
-			serv->mInProgresUsers.SendToAll(msg, serv->mC.delayed_myinfo, true);
-			serv->mP.Create_Hello(msg, robot->mNick); // send hello
-			serv->mHelloUsers.SendToAll(msg, serv->mC.delayed_myinfo, true);
+				serv->mP.Create_Quit(msg, robot->mNick); // send quit to users
+				serv->mUserList.SendToAll(msg, serv->mC.delayed_myinfo, true);
+				serv->mInProgresUsers.SendToAll(msg, serv->mC.delayed_myinfo, true);
+				serv->mP.Create_Hello(msg, robot->mNick); // send hello
+				serv->mHelloUsers.SendToAll(msg, serv->mC.delayed_myinfo, true);
+			}
 		}
 
 		robot->mClass = (tUserCl)iclass; // set new class
@@ -2160,137 +2330,135 @@ int _IsBot(lua_State *L)
 
 int _SQLQuery(lua_State *L)
 {
-	if(lua_gettop(L) == 2) {
-		cServerDC *server = GetCurrentVerlihub();
-		if(server == NULL) {
-			luaerror(L, ERR_SERV);
-			return 2;
-		}
-
-		cpiLua *pi = (cpiLua *)server->mPluginManager.GetPlugin(LUA_PI_IDENTIFIER);
-		if(pi == NULL) {
-			luaerror(L, ERR_LUA);
-			return 2;
-		}
-
-		if (!pi->mQuery) {
-			luaerror(L, "mQuery is not ready");
-			return 2;
-		}
-
-		if(!lua_isstring(L, 2)) {
-		    luaerror(L, ERR_PARAM);
-		    return 2;
-		}
-		pi->mQuery->Clear();
-		pi->mQuery->OStream() << lua_tostring(L, 2);
-		pi->mQuery->Query();
-		int i = pi->mQuery->StoreResult();
-
-		lua_pushboolean(L, 1);
-		if(i > 0)
-			lua_pushnumber(L, i);
-		else
-			lua_pushnumber(L, 0);
-		return 2;
-	} else {
-		luaL_error(L, "Error calling VH:SQLQuery; expected 1 argument but got %d", lua_gettop(L) - 1);
+	if (lua_gettop(L) < 2) {
+		luaL_error(L, "Error calling VH:SQLQuery, expected 1 argument but got %d.", lua_gettop(L) - 1);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
+
+	cServerDC *serv = GetCurrentVerlihub();
+
+	if (!serv) {
+		luaerror(L, ERR_SERV);
+		return 2;
+	}
+
+	cpiLua *plug = (cpiLua*)serv->mPluginManager.GetPlugin(LUA_PI_IDENTIFIER);
+
+	if (!plug) {
+		luaerror(L, ERR_LUA);
+		return 2;
+	}
+
+	if (!plug->mQuery) {
+		luaerror(L, ERR_QUERY);
+		return 2;
+	}
+
+	if (!lua_isstring(L, 2)) {
+	    luaerror(L, ERR_PARAM);
+	    return 2;
+	}
+
+	plug->mQuery->Clear();
+	plug->mQuery->OStream() << lua_tostring(L, 2);
+	plug->mQuery->Query();
+	int res = plug->mQuery->StoreResult();
+	lua_pushboolean(L, 1);
+
+	if (res)
+		lua_pushnumber(L, res);
+	else
+		lua_pushnumber(L, 0);
+
+	return 2;
 }
 
 int _SQLFetch(lua_State *L)
 {
-	if(lua_gettop(L) == 2) {
-		cServerDC *server = GetCurrentVerlihub();
-		if(server == NULL) {
-			luaerror(L, ERR_SERV);
-			return 2;
-		}
-
-		cpiLua *pi = (cpiLua *)server->mPluginManager.GetPlugin(LUA_PI_IDENTIFIER);
-		if(pi == NULL) {
-			luaerror(L, ERR_LUA);
-			return 2;
-		}
-
-		if (!pi->mQuery) {
-			luaerror(L, "mQuery is not ready");
-			return 2;
-		}
-
-		if(!lua_isnumber(L, 2)) {
-			luaerror(L, ERR_PARAM);
-			return 2;
-		}
-
-		int r = (int)lua_tonumber(L, 2);
-
-		if(!pi->mQuery->GetResult()) {
-			//lua_pushboolean(L, 0);
-			luaerror(L, "No result");
-			return 2;
-		}
-
-		pi->mQuery->DataSeek(r);
-
-		MYSQL_ROW row;
-
-		if(!(row = pi->mQuery->Row()))
-		{
-			//lua_pushboolean(L, 0);
-			luaerror(L, "Error fetching row");
-			return 2;
-		}
-
-		lua_pushboolean(L, 1);
-
-		int j = 0;
-		while(j < pi->mQuery->Cols()) {
-			lua_pushstring(L, row[j]);
-			j++;
-		}
-		return j + 1;
-	} else {
-		luaL_error(L, "Error calling VH:SQLFetch; expected 1 argument but got %d", lua_gettop(L) - 1);
+	if (lua_gettop(L) < 2) {
+		luaL_error(L, "Error calling VH:SQLFetch, expected 1 argument but got %d.", lua_gettop(L) - 1);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
+
+	cServerDC *serv = GetCurrentVerlihub();
+
+	if (!serv) {
+		luaerror(L, ERR_SERV);
+		return 2;
+	}
+
+	cpiLua *plug = (cpiLua*)serv->mPluginManager.GetPlugin(LUA_PI_IDENTIFIER);
+
+	if (!plug) {
+		luaerror(L, ERR_LUA);
+		return 2;
+	}
+
+	if (!plug->mQuery) {
+		luaerror(L, ERR_QUERY);
+		return 2;
+	}
+
+	if (!lua_isnumber(L, 2)) {
+		luaerror(L, ERR_PARAM);
+		return 2;
+	}
+
+	int pos = (int)lua_tonumber(L, 2);
+
+	if (!plug->mQuery->GetResult()) {
+		luaerror(L, "No result");
+		return 2;
+	}
+
+	plug->mQuery->DataSeek(pos);
+	MYSQL_ROW row;
+
+	if (!(row = plug->mQuery->Row())) {
+		luaerror(L, "Error fetching row");
+		return 2;
+	}
+
+	lua_pushboolean(L, 1);
+	pos = 0;
+
+	while (pos < plug->mQuery->Cols()) {
+		lua_pushstring(L, row[pos]);
+		pos++;
+	}
+
+	return pos + 1;
 }
 
 int _SQLFree(lua_State *L)
 {
-	if(lua_gettop(L) == 1) {
-		cServerDC *server = GetCurrentVerlihub();
-		if(server == NULL) {
-			luaerror(L, ERR_SERV);
-			return 2;
-		}
+	cServerDC *serv = GetCurrentVerlihub();
 
-		cpiLua *pi = (cpiLua *)server->mPluginManager.GetPlugin(LUA_PI_IDENTIFIER);
-		if(pi == NULL)
-		{
-			luaerror(L, ERR_LUA);
-			return 2;
-		}
-
-		if (!pi->mQuery) {
-			luaerror(L, "mQuery is not ready");
-			return 2;
-		}
-
-		pi->mQuery->Clear();
-	} else {
-		luaL_error(L, "Error calling VH:SQLFree; expected 0 argument but got %d", lua_gettop(L) - 1);
-		lua_pushboolean(L, 0);
-		lua_pushnil(L);
+	if (!serv) {
+		luaerror(L, ERR_SERV);
 		return 2;
 	}
+
+	cpiLua *plug = (cpiLua*)serv->mPluginManager.GetPlugin(LUA_PI_IDENTIFIER);
+
+	if (!plug) {
+		luaerror(L, ERR_LUA);
+		return 2;
+	}
+
+	if (!plug->mQuery) {
+		luaerror(L, ERR_QUERY);
+		return 2;
+	}
+
+	plug->mQuery->Clear();
 	lua_pushboolean(L, 1);
-	return 1;
+	lua_pushnil(L);
+	return 2;
 }
 
 int _GetVHCfgDir(lua_State *L)
@@ -2638,7 +2806,7 @@ int _AddRegUser(lua_State *L)
 	const string pass = lua_tostring(L, 3);
 	int uclass = (int)lua_tonumber(L, 4);
 
-	if ((uclass < eUC_PINGER) || (uclass == eUC_NORMUSER) || ((uclass > eUC_ADMIN) && (uclass < eUC_MASTER)) || (uclass > eUC_MASTER)) { // validate class number
+	if ((uclass < eUC_PINGER) || (uclass == eUC_NORMUSER) || ((uclass > eUC_ADMIN) && (uclass < eUC_MASTER)) || (uclass > eUC_MASTER)) { // validate class number, todo: can user implement his own classes?
 		luaerror(L, ERR_CLASS);
 		return 2;
 	}
@@ -2735,14 +2903,16 @@ int _SetTopic(lua_State *L)
 
 int _ScriptCommand(lua_State *L)
 {
-	if (lua_gettop(L) < 3) {
-		luaL_error(L, "Error calling VH:ScriptCommand, expected 2 arguments but got %d.", lua_gettop(L) - 1);
+	int args = lua_gettop(L) - 1;
+
+	if (args < 2) {
+		luaL_error(L, "Error calling VH:ScriptCommand, expected atleast 2 arguments but got %d.", args);
 		lua_pushboolean(L, 0);
 		lua_pushnil(L);
 		return 2;
 	}
 
-	if (!lua_isstring(L, 2) || !lua_isstring(L, 3)) {
+	if (!lua_isstring(L, 2) || !lua_isstring(L, 3) || ((args >= 3) && !lua_isnumber(L, 4))) {
 		luaerror(L, ERR_PARAM);
 		return 2;
 	}
@@ -2754,11 +2924,13 @@ int _ScriptCommand(lua_State *L)
 		return 2;
 	}
 
-	string cmd = lua_tostring(L, 2);
-	string data = lua_tostring(L, 3);
-	string plug("lua");
+	string cmd = lua_tostring(L, 2), data = lua_tostring(L, 3), plug("lua");
+	bool inst = false;
 
-	if (!ScriptCommand(&cmd, &data, &plug, &li->mScriptName)) {
+	if (args >= 3)
+		inst = (int(lua_tonumber(L, 4)) > 0);
+
+	if (!ScriptCommand(&cmd, &data, &plug, &li->mScriptName, inst)) {
 		luaerror(L, ERR_CALL);
 		return 2;
 	}
