@@ -57,6 +57,7 @@ function _register() # nickname, class, password, input_password_crypt, reg_date
 				0) PASSWORD="'$3'" && ENCRYPTION=0;;
 				1) PASSWORD="ENCRYPT('$3')" && ENCRYPTION=1;;
 				2) PASSWORD="MD5('$3')" && ENCRYPTION=2;;
+				3) PASSWORD="SHA256('$3')" && ENCRYPTION=3;;
 				*) PASSWORD="ENCRYPT('$3')" && ENCRYPTION=1;;
 			esac;
 			SQL_VALUES="$SQL_VALUES,$PASSWORD,'0','$ENCRYPTION'"

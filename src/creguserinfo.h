@@ -50,7 +50,8 @@ class cRegUserInfo
 		typedef enum { // crypt methods
 			eCRYPT_NONE,
 			eCRYPT_ENCRYPT,
-			eCRYPT_MD5
+			eCRYPT_MD5,
+			eCRYPT_SHA256
 		} tCryptMethods;
 
 		/**

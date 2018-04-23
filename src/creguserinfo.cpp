@@ -35,6 +35,8 @@
 #include "ctime.h"
 #include "i18n.h"
 
+#include "../PicoSHA2/picosha2.h"
+//todo? how do "upgrade" from crypt or md5? maybe just reset all pwd?
 using namespace std;
 
 namespace nVerliHub {
@@ -66,7 +68,7 @@ cRegUserInfo::~cRegUserInfo()
 
 bool cRegUserInfo::PWVerify(const string &pass)
 {
-	if (!mPasswd.size() || !pass.size()) // check both password lengths
+	if (mPasswd.empty() || pass.empty()) // check both password lengths
 		return false;
 
 	string crypt_buf;
@@ -76,10 +78,13 @@ bool cRegUserInfo::PWVerify(const string &pass)
 
 	switch (mPWCrypt) {
 		case eCRYPT_ENCRYPT:
+		{ 
 			crypt_buf = crypt(pass.c_str(), mPasswd.c_str());
 			result = crypt_buf == mPasswd;
 			break;
-		case eCRYPT_MD5:
+		}	
+		case eCRYPT_MD5://MD5 sum?
+		{
 			MD5((const unsigned char*)pass.c_str(), pass.size(), md5_buf);
 			md5_buf[MD5_DIGEST_LENGTH] = 0;
 
@@ -90,9 +95,20 @@ bool cRegUserInfo::PWVerify(const string &pass)
 			md5_hex[32] = 0;
 			result = mPasswd == string(md5_hex);
 			break;
+		}	
+		case eCRYPT_SHA256:
+		{
+			vector<unsigned char> hash(picosha2::k_digest_size);
+			picosha2::hash256(pass.begin(), pass.end(), hash.begin(), hash.end());
+			result = mPasswd == picosha2::bytes_to_hex_string(hash.begin(), hash.end());
+			break;
+		}	
 		case eCRYPT_NONE:
+		{
 			result = pass == mPasswd;
 			break;
+		}	
+		default:break;
 	}
 
 	return result;
@@ -139,7 +155,7 @@ void cRegUserInfo::SetPass(string str, tCryptMethods crypt_method)
 {
 	mPwdChange = !str.size();
 
-	if (str.size()) {
+	if (!str.empty()) {
 		string salt;
 		static const char *saltchars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmlopqrstuvwxyz0123456789./";
 		static const int saltcharsnum = strlen(saltchars);
@@ -149,13 +165,16 @@ void cRegUserInfo::SetPass(string str, tCryptMethods crypt_method)
 
 		switch (crypt_method) {
 			case eCRYPT_ENCRYPT:
+			{
 				charsalt[0] = saltchars[charsalt[0] % saltcharsnum];
 				charsalt[1] = saltchars[charsalt[1] % saltcharsnum];
 				salt.assign((char*)charsalt, 2);
 				mPasswd = crypt(str.c_str(), salt.c_str());
 				mPWCrypt = eCRYPT_ENCRYPT;
 				break;
+			}	
 			case eCRYPT_MD5:
+			{
 				MD5((const unsigned char*)str.c_str(), str.size(), md5_buf);
 				md5_buf[MD5_DIGEST_LENGTH] = 0;
 
@@ -167,10 +186,22 @@ void cRegUserInfo::SetPass(string str, tCryptMethods crypt_method)
 				mPasswd = string(md5_hex);
 				mPWCrypt = eCRYPT_MD5;
 				break;
+			}	
+			case eCRYPT_SHA256:
+			{
+				vector<unsigned char> hash(picosha2::k_digest_size);
+				picosha2::hash256(str.begin(), str.end(), hash.begin(), hash.end());
+				mPasswd = picosha2::bytes_to_hex_string(hash.begin(), hash.end());	
+				mPWCrypt = eCRYPT_SHA256;
+				break;
+			}	
 			case eCRYPT_NONE:
+			{
 				mPasswd = str;
 				mPWCrypt = eCRYPT_NONE;
 				break;
+			}	
+			default:break;	
 		}
 	} else
 		mPasswd = str;

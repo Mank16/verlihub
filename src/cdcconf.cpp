@@ -57,7 +57,7 @@ void cDCConf::AddVars()
 	Add("hub_host", hub_host, string(""));
 	Add("hub_failover_hosts", hub_failover_hosts, string(""));
 
-	Add("enable_ipv6" , enable_ipv6 , true);
+	Add("enable_ipv6" , enable_ipv6 , true);//@TODO
 
 	Add("listen_ip",mS.mAddr,string("0.0.0.0"));
 	Add("listen_port", mS.mPort, 4111);
@@ -280,7 +280,7 @@ void cDCConf::AddVars()
 	Add("disable_usr_cmds", disable_usr_cmds, false);
 	Add("disable_report_cmd", disable_report_cmd, false);
 	Add("always_ask_password", always_ask_password, false);
-	Add("default_password_encryption", default_password_encryption, (unsigned int)cRegUserInfo::eCRYPT_ENCRYPT); // 1
+	Add("default_password_encryption", default_password_encryption, (unsigned int)cRegUserInfo::eCRYPT_MD5/*eCRYPT_ENCRYPT*/); // 1 //WHY?
 	Add("password_min_len", password_min_len, 6);
 	Add("pwd_tmpban", pwd_tmpban, 60);
 	Add("wrongpass_message", wrongpass_message, "");

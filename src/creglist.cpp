@@ -61,7 +61,7 @@ cRegList::cRegList(cMySQL &mysql, cServerDC *server): cConfMySQL(mysql)
 	AddCol("reg_op", "varchar(64)", "", true, mModel.mRegOp);
 	AddCol("pwd_change", "tinyint(1)", "1", true, mModel.mPwdChange);
 	AddCol("pwd_crypt", "tinyint(1)", "1", true, mModel.mPWCrypt);
-	AddCol("login_pwd", "varchar(60)", "", true, mModel.mPasswd);
+	AddCol("login_pwd", "varchar(257)", "", true, mModel.mPasswd);
 	AddCol("login_last", "int(11)", "0", true, mModel.mLoginLast);
 	AddCol("logout_last", "int(11)", "0", true, mModel.mLogoutLast);
 	AddCol("login_cnt", "int(11)", "0", true, mModel.mLoginCount);
