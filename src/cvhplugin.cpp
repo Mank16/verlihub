@@ -27,18 +27,18 @@ namespace nVerliHub {
 	using namespace nEnums;
 	using namespace nSocket;
 	namespace nPlugin {
-cVHPlugin::cVHPlugin()
+
+cVHPlugin::cVHPlugin():
+mServer(NULL) , mUserDataTable(NULL)
 {
-	mServer = 0;
-	mUserDataTable = NULL;
+//
 }
 
 
 cVHPlugin::~cVHPlugin()
 {
-	cUserCollection::iterator it;
-	cPluginRobot * robot;
-	for(it = mRobots.begin(); it != mRobots.end();) {
+	cPluginRobot *robot;
+	for(cUserCollection::iterator it = mRobots.begin(); it != mRobots.end();) {
 		robot = (cPluginRobot *) *it;
 		++it;
 		DelRobot(robot);

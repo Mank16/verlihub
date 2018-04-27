@@ -101,7 +101,7 @@ cVHPlugin *cPlug::IsLoaded() const
 
 bool cPlug::Plugin()
 {
-	cVHPluginMgr *pm = mOwner?mOwner->mPM:NULL;
+	cVHPluginMgr *pm = mOwner ? mOwner->mPM : NULL;
 	if (pm && !IsLoaded() && CheckMakeTime()) {
 		if (IsScript()) {
 			ostringstream os;
@@ -130,7 +130,17 @@ bool cPlug::Plugin()
 		} else {
 			if (pm->LoadPlugin(mPath)) {
 				mLoadTime = cTime().Sec();
-				mLastError = _("Plugin loaded.");
+
+				size_t num = mPath.find_last_of("/");
+				string temp = mPath.substr(++num);
+				num = temp.length() - 3; 
+				temp = temp.substr(0,num);
+				temp.replace(0,3,"");
+				num = temp.find_first_of("_");
+				string name = temp.substr(0,num);
+
+			
+				mLastError = _("Plugin loaded : ") + name;
 				SaveMe();
 				return true;
 			} else {

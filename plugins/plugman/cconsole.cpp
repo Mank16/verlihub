@@ -179,7 +179,7 @@ bool cPlugConsole::cfOn::operator()()
 			if (!res) // show an error if it fails
 				(*mOS) << Plug->mLastError;
 			else
-				(*mOS) << _("Plugin loaded.");
+				(*mOS) << _("Plugin loaded: ") << Plug->mNick;
 
 			return res;
 		}
@@ -199,7 +199,7 @@ bool cPlugConsole::cfOff::operator()()
 
 		if (Plug) {
 			if (Plug->Plugout()) {
-				(*mOS) << _("Plugin unloaded.");
+				(*mOS) << _("Plugin unloaded.") << Plug->mNick;
 				return true;
 			} else {
 				(*mOS) << _("Plugin not unloaded, probably because it's not loaded.");
@@ -222,7 +222,7 @@ bool cPlugConsole::cfRe::operator()()
 
 		if (Plug) {
 			if (Plug->Replug()) {
-				(*mOS) << _("Plugin reloaded.");
+				(*mOS) << _("Plugin reloaded.") << Plug->mNick;
 				return true;
 			} else {
 				(*mOS) << _("Plugin not reloaded, probably because it's not loaded.");
