@@ -26,9 +26,6 @@
 
 #include "casyncsocketserver.h"
 #include "cmysql.h"
-#if defined _WIN32
-#include <winsock2.h>
-#endif
 #include <fstream>
 #include "cuser.h"
 #include "cmessagedc.h"

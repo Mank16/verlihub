@@ -110,7 +110,7 @@ void cBan::DisplayUser(ostream &os)
 	}
 
 	if (mShare)
-		os << " [*] " << autosprintf(_("Share: %llu [%s]"), mShare, convertByte(mShare, false).c_str()) << "\r\n";
+		os << " [*] " << autosprintf(_("Share: " PRIu64 "[%s]"), mShare, convertByte(mShare, false).c_str()) << "\r\n";
 
 	if (mReason.size())
 		os << " [*] " << autosprintf(_("Reason: %s"), mReason.c_str()) << "\r\n";

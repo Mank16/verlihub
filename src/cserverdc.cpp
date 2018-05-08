@@ -653,7 +653,7 @@ void cServerDC::SendToAll(const string &data, int cm, int cM) // note: class ran
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
 		conn = (cConnDC*)(*i);
 
-		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList)
+		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList)
 			conn->Send(str); // pipe is added by default for safety
 	}
 }
@@ -668,7 +668,7 @@ int cServerDC::SendToAllWithNick(const string &start, const string &end, int cm,
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
 		conn = (cConnDC*)(*i);
 
-		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM)) {
+		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM)) {
 			str = start + conn->mpUser->mNick + end;
 			conn->Send(str); // pipe is added by default for safety
 			counter++;
@@ -688,7 +688,7 @@ int cServerDC::SendToAllWithNickVars(const string &start, const string &end, int
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
 		conn = (cConnDC*)(*i);
 
-		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM)) {
+		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM)) {
 			tend = end;
 			ReplaceVarInString(tend, "NICK", tend, conn->mpUser->mNick); // replace variables
 			ReplaceVarInString(tend, "CLASS", tend, conn->mpUser->mClass);
@@ -716,7 +716,7 @@ int cServerDC::SendToAllNoNickVars(const string &msg, int cm, int cM)
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
 		conn = (cConnDC*)(*i);
 
-		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM)) {
+		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM)) {
 			tmsg = msg;
 			ReplaceVarInString(tmsg, "NICK", tmsg, conn->mpUser->mNick); // replace variables
 			ReplaceVarInString(tmsg, "CLASS", tmsg, conn->mpUser->mClass);
@@ -743,7 +743,7 @@ int cServerDC::SendToAllWithNickCC(const string &start, const string &end, int c
 	for (i = mConnList.begin(); i != mConnList.end(); i++) {
 		conn = (cConnDC*)(*i);
 
-		if (conn && conn->ok && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM) && (cc_zone.npos != cc_zone.find(conn->mCC))) {
+		if (conn && conn->getok() && conn->mpUser && conn->mpUser->mInList && (conn->mpUser->mClass >= cm) && (conn->mpUser->mClass <= cM) && (cc_zone.npos != cc_zone.find(conn->mCC))) {
 			str = start + conn->mpUser->mNick + end;
 			conn->Send(str); // pipe is added by default for safety
 			counter++;

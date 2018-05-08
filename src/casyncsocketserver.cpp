@@ -158,8 +158,9 @@ void cAsyncSocketServer::delConnection(cAsyncConn *old_conn)
 		throw "delConnection null pointer";
 
 	if (mNowTreating == old_conn) {
-		//old_conn->ok = false;
+		old_conn->mSockDesc = -1;
 		delete old_conn; // this should most stuff invalidate
+		old_conn = NULL;
 		return;
 	}
 
@@ -263,8 +264,8 @@ int cAsyncSocketServer::OnTimerBase(cTime &now)
 	if ((mT.conn + timer_conn_period) <= now) {
 		mT.conn = now;
 
-		for (it=mConnList.begin(); it != mConnList.end(); ++it) {
-			if ((*it)->mSockDesc > INVALID_SOCKET)
+		for (it = mConnList.begin(); it != mConnList.end(); ++it) {
+			if ((*it)->getok())
 				(*it)->OnTimerBase(now);
 		}
 	}
@@ -356,7 +357,7 @@ pair<cAsyncConn *,cAsyncConn*> cAsyncSocketServer::Listen(int OnPort, bool bUDP)
 	if(this->ListenWithConn(ListenSock, OnPort, bUDP) == NULL )
 		LogStream() << "Error with IPv4";
 		
-	if(this->ListenWithConn(ListenSock6, OnPort, bUDP,true) == NULL)
+	if(this->ListenWithConn(ListenSock6, OnPort, bUDP, true) == NULL)
 		LogStream() << "Error with IPv6";
 	
 	return make_pair(ListenSock,ListenSock6);
@@ -372,23 +373,23 @@ int cAsyncSocketServer::StartListening(int OverrideDefaultPort)
 	// ipv4/ipv6
 	pair<cAsyncConn*, cAsyncConn*> mIsOk = this->Listen(OverrideDefaultPort, false);
 	
-	if(mIsOk.first != NULL && mIsOk.second != NULL)
+	if( (mIsOk.first != NULL) && (mIsOk.second != NULL) )
 		return 0;
 	return -1;
 }
 
-void cAsyncSocketServer::LogOnListen(std::string mess, int OnPort, bool bipv6 , bool bUDP)
+void cAsyncSocketServer::LogOnListen(string message, int OnPort, bool bipv6 , bool bUDP)
 {
 	if(Log(0))
 	{
-		LogStream() << mess << (bipv6 ? "["+mAddr6+"]:" : mAddr) << OnPort << (bUDP ? " UDP":" TCP" ) << endl;
+		LogStream() << message << (bipv6 ? "["+mAddr6+"]:" : mAddr) << OnPort << (bUDP ? " UDP":" TCP" ) << endl;
 	}
 	
 }	
 
 cAsyncConn * cAsyncSocketServer::ListenWithConn(cAsyncConn *ListenSock, int OnPort, bool bUDP, bool bipv6)
 {
-	if(ListenSock != NULL) {
+	if(ListenSock) {
 		if(ListenSock->ListenOnPort(OnPort, bipv6 ? (const_cast<char*>(mAddr6.c_str())) : (const_cast<char*>(mAddr.c_str())), bUDP,bipv6) == INVALID_SOCKET) {
 			LogOnListen("Can not listen on " , OnPort, bipv6 ,bUDP );
 			LogStream() << "Please make sure the port is open and not already used by another process" << endl;

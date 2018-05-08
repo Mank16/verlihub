@@ -102,18 +102,16 @@ int cRegList::ShowUsers(cConnDC *op, ostringstream &os, int cls)
 		ostringstream oss;
 		oss << "SELECT `nick` FROM " << mMySQLTable.mName << " WHERE `class` = " << cls << " ORDER BY `nick` ASC";
 		mQuery.OStream() << oss.str();
-		if (mQuery.Query() <= 0) return 0;
+		if (mQuery.Query() == -1) return 0;
 		int n = mQuery.StoreResult();
-		cMySQLColumn col;
 		MYSQL_ROW row;
 		cUser *usr = NULL;
 
-		for (int i = 0; i < n; i++) {
-			row = mQuery.Row();
-			usr = mS->mUserList.GetUserByNick(row[0]);
-			os << " " << row[0];
-			if (usr && usr->mxConn) os << " [" << toUpper(_("On")) << "]";
-			os << "\r\n";
+		while( (row = mQuery.Row())) {
+				usr = mS->mUserList.GetUserByNick(row[0]);
+				os << " " << row[0];
+				if (usr && usr->mxConn) os << " [" << _("On") << "]";
+				os << "\r\n";
 		}
 
 		mQuery.Clear();

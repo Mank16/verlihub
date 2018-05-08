@@ -221,7 +221,7 @@ void cTriggerConsole::GetHelpForCommand(int cmd, ostream &os)
 			break;
 	}
 
-	if (help_str.size ()) {
+	if (!help_str.empty()) {
 		cDCProto::EscapeChars(help_str, help_str);
 		os << help_str;
 	}
@@ -324,7 +324,7 @@ bool cTriggerConsole::CheckData(cfBase *cmd, cTrigger &data)
 		*cmd->mOS << _("It's not allowed to define dbconfig file as trigger.") << "\n";
 		cConnDC *conn = (cConnDC *) cmd->mConn;
 		ostringstream message;
-		message << autosprintf(_("User '%s' tried to define dbconfig as trigger"), conn->mpUser->mNick.c_str());
+		message << autosprintf(_("User %s tried to define dbconfig as trigger"), conn->mpUser->mNick.c_str());
 		mOwner->mServer->ReportUserToOpchat(conn, message.str());
 		return false;
 	}

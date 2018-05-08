@@ -144,7 +144,7 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct, bool tIPv6
 			if(mTmp) {
 				mServAddr = strdup(mTmp);
 				free(mTmp);
-				LogStream() << "freeing tmp of mServAddrs" << endl;//probaly not need later?
+				LogStream() << "freeing tmp of mServAddrs" << endl; //probaly not need later?
 			}
 			
 			mServPort =  ntohs(((sockaddr_in*)&saddr)->sin_port);
@@ -162,7 +162,6 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct, bool tIPv6
 cAsyncConn::cAsyncConn(const string &host, int port, bool udp):
 	cObj("cAsyncConn"),
 	mZlibFlag(false),
-	// mIterator(0),
 	mWritable(true),
 	mSockDesc(INVALID_SOCKET),
 	mxServer(NULL),
@@ -200,8 +199,10 @@ void cAsyncConn::Close()
 	if(mSockDesc < 0)
 		return;
 	mWritable = false;
+	
 	if(mxServer)
 		mxServer->OnConnClose(this);
+	
 	TEMP_FAILURE_RETRY(closesocket(mSockDesc));
 	
 	if(errno != EINTR) {
@@ -225,15 +226,17 @@ void cAsyncConn::Flush()
 
 int cAsyncConn::ReadLineLocal()
 {
-	if(!mxLine)
-		throw "ReadLine with null line pointer";
-	char *pos,*buf;
-	buf = msBuffer + mBufReadPos;
-	int len;
-	len = mBufEnd - mBufReadPos;
+	if(!mxLine) {
+		LogStream() << "ReadLine with null line pointer" << endl;
+		return 0; //@ Zero char readed?
+	}
+
+	char *pos;
+	char *buf = msBuffer + mBufReadPos;
+	int len = mBufEnd - mBufReadPos;
 
 	if(NULL == (pos = (char*)memchr(buf, mSeparator,len))) {
-		if(mxLine->size()+len > mLineSizeMax) {
+		if(mxLine->size() + len > mLineSizeMax) {
 			CloseNow();
 			return 0;
 		}
@@ -254,9 +257,16 @@ int cAsyncConn::ReadLineLocal()
 void cAsyncConn::SetLineToRead(string *strp,char delim, int max)
 {
 	if(LineStatus() != AC_LS_NO_LINE)
-		throw "cAsyncConn::SetLineToRead - precondition not ok";
+	{	
+		LogStream() << "cAsyncConn::SetLineToRead - precondition not ok" << endl;
+		return;
+	}	
 	if(!strp)
-		throw "cAsyncConn::SetLineToRead - precondition not ok - null string pointer";
+	{	
+		LogStream() << "cAsyncConn::SetLineToRead - precondition not ok - null string pointer" << endl;
+		return;
+	}
+
 	meLineStatus = AC_LS_PARTLY;
 	mLineSize = 0;
 	mLineSizeMax = max;
@@ -300,12 +310,12 @@ void cAsyncConn::CloseNow()
 		mxServer->mConnChooser.OptOut((cConnBase*)this, eCC_ALL);
 		mxServer->mConnChooser.OptIn((cConnBase*)this, eCC_CLOSE);
 	}
-	::shutdown(mSockDesc,2);//shutdown sock
+	::shutdown(mSockDesc,2); //shutdown sock
 }
 
 int cAsyncConn::ReadAll()
 {
-	int buf_len = 0 , i=0, addr_len = sizeof(struct sockaddr);
+	int buf_len = 0 , i = 0, addr_len = sizeof(struct sockaddr);
 	mBufReadPos = 0;
 	mBufEnd = 0;
 	bool udp = (this->GetType() == eCT_CLIENTUDP);
@@ -551,8 +561,7 @@ int cAsyncConn::BindSocket(int sockfd, int port,  char *addr,int type)
     
     
     if (bind(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
-        fprintf(stderr, "listen_server:: could not bind socket erno %d\n",errno);
-        LogStream() << "bind v4" << errno << endl;
+        LogStream() << "Error binding v4:" << errno << endl;
         close(sockfd);
         return INVALID_SOCKET;
     }
@@ -587,6 +596,7 @@ int cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv
 {
 	if(!(mSockDesc >= 0))
 		return INVALID_SOCKET;
+
 	mSockDesc = CreateSock(udp,ipv6);
 	if(!(mSockDesc >= 0)) {
 		LogStream() << "error create" << mSockDesc << endl;
@@ -630,12 +640,7 @@ tSocket cAsyncConn::AcceptSock()
 	socklen_t namelen;
 	sockoptval_t yes = 1;
 	int i=0;
-	#if ! defined _WIN32
 	struct sockaddr_in client;
-	#else
-	struct sockaddr client;
-	#endif
-
 	/* Get a socket for the connected user.  */
 	namelen = sizeof(client);
 	memset(&client, 0, namelen);
@@ -692,11 +697,15 @@ cAsyncConn * cAsyncConn::Accept()
 	mTimeLastIOAction.Get();
 
 	AcceptingFactory = this->GetAcceptingFactory();
-	if (AcceptingFactory != NULL)
+	
+	if (AcceptingFactory)
 		new_conn = AcceptingFactory->CreateConn(sd);
+	
 	if(!new_conn)
-		throw "can't create connection";
-
+	{	
+		LogStream() << "can't create connection" << endl;
+		return NULL;
+	}
 	return new_conn;
 }
 

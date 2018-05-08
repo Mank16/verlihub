@@ -497,7 +497,6 @@ namespace nVerliHub {
 				tCLIt mIterator;
 
 				/// Indicate if the connection is still valid.
-				bool ok;
 				bool getok() { return (mSockDesc > INVALID_SOCKET);}
 
 				/// Indicate if we can write data to the connection.

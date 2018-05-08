@@ -579,7 +579,7 @@ void cUser::SetRight(unsigned Right, long until, bool allow, bool notify)
 			break;
 	};
 
-	if (notify && msg.size() && mxConn)
+	if (notify && (!msg.empty()) && mxConn)
 		mxServer->DCPublicHS(autosprintf(msg.c_str(), cTime(until - cTime().Sec()).AsPeriod().AsString().c_str()), mxConn);
 }
 
@@ -616,8 +616,10 @@ cChatRoom::cChatRoom(const string &nick, cUserCollection *col, cServerDC *server
 
 cChatRoom::~cChatRoom()
 {
-	if (mConsole) delete mConsole;
-	mConsole = NULL;
+	if (mConsole) {
+	    delete mConsole;
+	    mConsole = NULL;
+	}
 }
 
 void cChatRoom::SendPMToAll(const string &data, cConnDC *conn, bool fromplug, bool skipself)
@@ -662,7 +664,7 @@ bool cChatRoom::ReceiveMsg(cConnDC *conn, cMessageDC *msg)
 
 			string &chat = msg->ChunkString(eCH_PM_MSG);
 
-			if (chat.size()) {
+			if (!chat.empty()) {
 				if (chat[0] == '+') {
 					if (!mConsole->DoCommand(chat, conn))
 						SendPMTo(conn, _("Unknown chatroom command specified."));

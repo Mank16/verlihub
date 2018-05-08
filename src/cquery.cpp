@@ -68,7 +68,7 @@ int cQuery::StoreResult()
 
 MYSQL_ROW cQuery::Row()
 {
-	if(!mResult) return NULL;
+	if(!mResult) return 0;
 	return mysql_fetch_row(mResult);
 }
 

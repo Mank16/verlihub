@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <ctype.h>
+#include <inttypes.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -110,7 +111,7 @@ void ExpandPath(string &Path)
 	if (Path.substr(0, 2) == "./") {
 		string tmp = Path;
 
-		
+
 		#if defined HAVE_BSD
 			char *cPath = getcwd(NULL, PATH_MAX);
 			Path = cPath;
@@ -253,7 +254,7 @@ string convertByte(int64_t byte, bool UnitSec)
 string StringFrom(int64_t const &ll)
 {
 	char buf[32];
-	sprintf(buf,"%lld",ll);
+	sprintf(buf, "%" PRId64 " " ,ll);
 	return buf;
 }
 int64_t StringAsLL(const string &str)
