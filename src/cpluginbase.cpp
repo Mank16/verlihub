@@ -35,13 +35,13 @@ cPluginBase::cPluginBase():cObj("PluginBase")
 
 cPluginBase::~cPluginBase(){}
 
-int cPluginBase::StrLog(ostream & ostr, int level)
+bool cPluginBase::StrLog(ostream & ostr, int level)
 {
 	if(cObj::StrLog(ostr,level)) {
 		LogStream()   << "(" << mName << ") ";
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 bool cPluginBase::RegisterCallBack(string id)

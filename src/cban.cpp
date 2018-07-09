@@ -29,19 +29,21 @@ namespace nVerliHub {
 	using namespace nEnums;
 	using namespace nUtils;
 	using namespace nSocket;
-	namespace nTables {
+
+namespace nTables {
 
 cBan::cBan(cServerDC *s):
 	cObj("cBan"),
-	mS(s)
-{
-	mShare = 0;
-	mDateStart = 0;
-	mDateEnd = 0;
-	mLastHit = 0;
-	mType = 0;
-	mRangeMin = 0;
-	mRangeMax = 0;
+	mS(s),
+	mShare(0),
+	mDateStart(0),
+	mDateEnd(0),
+	mLastHit(0),
+	mType(0),
+	mRangeMin(0),
+	mRangeMax(0)
+{	
+
 }
 
 cBan::~cBan()
@@ -95,10 +97,10 @@ void cBan::DisplayUser(ostream &os)
 {
 	os << "\r\n";
 
-	if (mNick.size())
+	if (!mNick.empty())
 		os << " [*] " << autosprintf(_("Nick: %s"), mNick.c_str()) << "\r\n";
 
-	if (!mRangeMin && mIP.size() && (mIP[0] != '_'))
+	if (!mRangeMin && (!mIP.empty()) && (mIP[0] != '_'))
 		os << " [*] " << autosprintf(_("IP: %s"), mIP.c_str()) << "\r\n";
 
 	string loaddr, hiaddr;
@@ -112,10 +114,10 @@ void cBan::DisplayUser(ostream &os)
 	if (mShare)
 		os << " [*] " << autosprintf(_("Share: " PRIu64 "[%s]"), mShare, convertByte(mShare, false).c_str()) << "\r\n";
 
-	if (mReason.size())
+	if (!mReason.empty())
 		os << " [*] " << autosprintf(_("Reason: %s"), mReason.c_str()) << "\r\n";
 
-	if (mS->mC.ban_extra_message.size()) // extra ban message
+	if (!mS->mC.ban_extra_message.empty()) // extra ban message
 		os << " [*] " << autosprintf(_("Extra: %s"), mS->mC.ban_extra_message.c_str()) << "\r\n";
 
 	os << " [*] " << _("Time") << ": ";
@@ -129,7 +131,7 @@ void cBan::DisplayUser(ostream &os)
 
 	os << "\r\n";
 
-	if (mNoteUsr.size())
+	if (!mNoteUsr.empty())
 		os << " [*] " << autosprintf(_("User note: %s"), mNoteUsr.c_str()) << "\r\n";
 }
 
@@ -143,12 +145,12 @@ void cBan::DisplayComplete(ostream &os)
 {
 	DisplayUser(os);
 
-	if (mNoteOp.size())
+	if (!mNoteOp.empty())
 		os << " [*] " << autosprintf(_("Operator note: %s"), mNoteOp.c_str()) << "\r\n";
 
 	os << " [*] " << autosprintf(_("Type: %s"), this->GetBanType()) << "\r\n";
 
-	if (mNickOp.size())
+	if (!mNickOp.empty())
 		os << " [*] " << autosprintf(_("Operator: %s"), mNickOp.c_str()) << "\r\n";
 
 	os << " [*] " << _("Last hit") << ": ";
@@ -169,7 +171,7 @@ const char *cBan::GetBanType()
 
 void cBan::SetType(unsigned type)
 {
-	for (mType = 0; mType < nEnums::eBF_LAST; mType++) {
+	for (mType = 0; mType < eBF_LAST; mType++) {
 		if (type == (unsigned)(1 << mType))
 			break;
 	}

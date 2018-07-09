@@ -46,25 +46,10 @@ public:
  	bool Open();
 	bool Close();
 	bool LoadSym();
-	int StrLog(ostream & ostr, int level);
+	bool StrLog(ostream & ostr, int level);
 	bool IsError()
 	{
-		#ifdef _WIN32
-		LPVOID buff;
-		FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_HMODULE,
-			mHandle,
-			GetLastError(),
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-			(LPTSTR) &buff,
-			0,
-			NULL
-		);
-		mError= (const char *) buff;
-		LocalFree(buff);
-		#else
 		return (mError = dlerror()) != NULL;
-		#endif
 	}
 	string Error(){return string((mError!=NULL)?mError:"ok");}
 	string GetFilename(){ return mFileName;}

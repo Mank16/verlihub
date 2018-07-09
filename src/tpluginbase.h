@@ -27,8 +27,7 @@
 using std::string;
 
 namespace nVerliHub {
-	namespace nPlugin {
-
+namespace nPlugin {
 /**
 the plugin base class suitable for any application
 
@@ -42,15 +41,11 @@ public:
 	bool Open();
 	bool Close();
 	string Error();
-	int StrLog(ostream & ostr, int level);
+	bool StrLog(ostream & ostr, int level);
 protected:
 	string mFileName;
 	string mName;
-	#ifdef _WIN32
-	HINSTANCE mHandle;
-	#else
 	void *mHandle;
-	#endif
 
 };
 

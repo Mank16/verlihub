@@ -23,11 +23,11 @@
 #include "cobj.h"
 
 namespace nVerliHub {
-	namespace nEnums {
+	//namespace nEnums {
 		/**
 		 * Type of the ban.
 		 */
-		enum tBanFlags {
+		typedef enum {
 			/// Nick and IP address are banned.
 			eBF_NICKIP = 1 << 0,
 			/// IP address is banned.
@@ -49,8 +49,8 @@ namespace nVerliHub {
 			/// Reverse host is banned
 			eBF_HOSTR1 = 1 << 9,
 			eBF_LAST = 1 << 10 // last item, used for iteration only
-		};
-	};
+		} tBanFlags;
+	//};
 
 	namespace nSocket {
 		class cServerDC;

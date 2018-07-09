@@ -187,6 +187,7 @@ namespace nVerliHub {
 				{
 					return mAddrIP;
 				}
+				
 				const string& AddrIPv6()
 				{
 					return mAddrIP6;	
@@ -470,7 +471,7 @@ namespace nVerliHub {
 					return mSockDesc;
 				}
 				
-				/* compare & return sock desc (wich is numbers)*/
+				/* compare & return sock desc (wich is number)*/
 				bool operator==(cAsyncConn* rts)
 				{
 					return rts->mSockDesc == mSockDesc;

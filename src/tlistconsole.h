@@ -92,7 +92,7 @@ public:
 			else
 				os << _("You have no rights to do this.");
 		
-			if (os.str().size())
+			if (!os.str().empty())
 				this->mOwner->mServer->DCPublicHS(os.str().c_str(), conn);
 
 			return 1;
@@ -129,8 +129,7 @@ public:
 
 	virtual const char *CmdSuffixWithSpace(int cmd)
 	{
-		static string id;
-		id = CmdSuffix();
+		static string id = CmdSuffix();
 
 		if (!((cmd == eLC_LST) || (cmd == eLC_HELP)))
 			id += " ";
@@ -213,8 +212,6 @@ protected:
 						(*this->mOS) << _("Item already exists.");
 					}
 				}
-			//} else {
-				//(*this->mOS) << "\r\n";
 			}
 
 			return false;

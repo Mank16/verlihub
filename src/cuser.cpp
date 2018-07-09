@@ -249,13 +249,13 @@ void cUser::DisplayInfo(ostream &os)
 	//os << " [*] " << autosprintf(_("In list: %s"), (this->mInList ? _("Yes") : _("No"))) << "\r\n"; // user who is not in list cant use +myinfo command
 	os << " [*] " << autosprintf(_("IP: %s"), this->mxConn->AddrIP().c_str()) << "\r\n";
 
-	if (this->mxConn->AddrHost().size())
+	if (!this->mxConn->AddrHost().empty())
 		os << " [*] " << autosprintf(_("Host: %s"), this->mxConn->AddrHost().c_str()) << "\r\n";
 
-	if (this->mxConn->mCC.size())
+	if (!this->mxConn->mCC.empty())
 		os << " [*] " << autosprintf(_("Country: %s=%s"), this->mxConn->mCC.c_str(), this->mxConn->mCN.c_str()) << "\r\n";
 
-	if (this->mxConn->mCity.size())
+	if (!this->mxConn->mCity.empty())
 		os << " [*] " << autosprintf(_("City: %s"), this->mxConn->mCity.c_str()) << "\r\n";
 
 	if (this->mxConn->mRegInfo)

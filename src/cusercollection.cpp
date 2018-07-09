@@ -267,14 +267,14 @@ void cUserCollection::FlushCache()
 	SendToAll(mSendAllCache, false, false); // mSendAllCache is empty here, thats what we want
 }
 
-int cUserCollection::StrLog(ostream & ostr, int level)
+bool cUserCollection::StrLog(ostream & ostr, int level)
 {
 	if(cObj::StrLog(ostr,level)) {
 		LogStream() << "(" << mNickListMaker.mStart ;
 		LogStream() << ") "<< "[ " << Size() /* << "/" << mUserList.size()*/ << " ] ";
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 cCompositeUserCollection::cCompositeUserCollection(bool keepNicks, bool keepInfos, bool keepips, cVHCBL_String* nlcb, cVHCBL_String *ilcb)

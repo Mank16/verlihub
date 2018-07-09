@@ -196,7 +196,7 @@ public:
 	cUserCollection(bool KeepNickList=false, bool KeepINFOList = false);
 	virtual ~cUserCollection();
 
-	virtual int StrLog(ostream & ostr, int level);
+	virtual bool StrLog(ostream & ostr, int level);
 	void SetNickListStart(const string &Start){mNickListMaker.mStart = Start;}
 	void SetNickListSeparator(const string &Separator){mNickListMaker.mSep = Separator;}
 	virtual string &GetNickList();

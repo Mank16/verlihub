@@ -55,7 +55,7 @@ public:
 	bool RegisterCallBack(string id);
 	bool UnRegisterCallBack(string id);
 
-	virtual int StrLog(ostream & ostr, int level);
+	virtual bool StrLog(ostream & ostr, int level);
 	virtual bool RegisterAll() = 0;
 protected:
 	string mName;

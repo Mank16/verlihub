@@ -37,7 +37,7 @@ cCommand::cCommand(int ID, const char *regexId, const char *paramRegex, sCmdFunc
 {
 	mCmdr = NULL;
 
-	if (CmdFunc != NULL) {
+	if (CmdFunc) {
 		CmdFunc->mCommand = this;
 		CmdFunc->mIdRex = &mIdentificator;
 		CmdFunc->mParRex = &mParamsParser;
@@ -61,7 +61,7 @@ void cCommand::Init(int ID, const char *regexId, const char *paramRegex, sCmdFun
 	mParRegexStr = paramRegex;
 
 	mCmdr = NULL;
-	if(CmdFunc != NULL) {
+	if(CmdFunc) {
 		CmdFunc->mCommand = this;
 		CmdFunc->mIdRex = &mIdentificator;
 		CmdFunc->mParRex = &mParamsParser;

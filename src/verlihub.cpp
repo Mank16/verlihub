@@ -88,7 +88,7 @@ void mySigHupHandler(int i)
 
 bool DirExists(const char *dirname)
 {
-	DIR *dir ;
+	DIR *dir;
 	dir = opendir(dirname);
 	if( dir == NULL)
 	{

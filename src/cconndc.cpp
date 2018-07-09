@@ -116,7 +116,7 @@ int cConnDC::Send(string &data, bool AddPipe, bool Flush)
 	return ret;
 }
 
-int cConnDC::StrLog(ostream & ostr, int level)
+bool cConnDC::StrLog(ostream & ostr, int level)
 {
 	if(cObj::StrLog(ostr,level))
 	{
@@ -126,9 +126,9 @@ int cConnDC::StrLog(ostream & ostr, int level)
 		LogStream()   << ") ";
 		if(mpUser)
 			LogStream() << "[ " << mpUser->mNick << " ] ";
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 void cConnDC::SetLSFlag(unsigned int statusFlag)
@@ -598,7 +598,15 @@ cAsyncConn *cDCConnFactory::CreateConn(tSocket sd)
 	if (!mServer)
 		return NULL;
 
-	conn = new cConnDC(sd, mServer);
+	conn = new (std::nothrow) cConnDC(sd, mServer);
+
+	if(!conn)
+	{
+		if (mServer->Log(0)) 
+				mServer->LogStream() << "Failed to create new connection" << endl; 
+		return NULL;	
+	}	
+
 	conn->mxMyFactory = this;
 
 	if (mServer->mMaxMindDB->GetCCC(conn->mCC, conn->mCN, conn->mCity, conn->AddrIP()) && conn->mCC.size() && mServer->mC.cc_zone[0].size()) { // get all geo data in one call

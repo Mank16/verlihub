@@ -23,7 +23,7 @@
 #include "src/cban.h"
 
 using namespace std;
-using namespace nVerliHub::nEnums;
+using namespace nVerliHub;
 
 vector<w_TScript *> w_Scripts;
 

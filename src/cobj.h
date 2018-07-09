@@ -44,7 +44,7 @@ class cObj
 		virtual ~cObj();
 
 		/** Logs an event into a given stream */
-		virtual int StrLog(ostream & ostr, int level);
+		virtual bool StrLog(ostream & ostr, int level);
 		/** Log or not an event?? */
 		int Log(int level);
 		/** error Log or not an event */

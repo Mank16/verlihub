@@ -20,3 +20,5 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <inttypes.h>
+
+#define NAME_APP "verlihub"

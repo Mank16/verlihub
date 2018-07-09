@@ -90,14 +90,14 @@ bool cPluginLoader::Close()
 }
 
 /** log the event */
-int cPluginLoader::StrLog(ostream & ostr, int level)
+bool cPluginLoader::StrLog(ostream & ostr, int level)
 {
 	if(cObj::StrLog(ostr,level))
 	{
 		LogStream()   << "(" << mFileName << ") ";
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 bool cPluginLoader::LoadSym()

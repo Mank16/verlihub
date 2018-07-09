@@ -21,13 +21,16 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
 #include "cserverdc.h"
 #include "cinterpolexp.h"
 #include "cconndc.h"
 #include "creglist.h"
+#include "cban.h"
 #include "cbanlist.h"
 #include "ckicklist.h"
 #include "cpenaltylist.h"
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -38,6 +41,7 @@
 #include <algorithm>
 #include <execinfo.h>
 #include <cxxabi.h>
+
 #include "cthreadwork.h"
 #include "stringutils.h"
 #include "cconntypes.h"
@@ -50,10 +54,11 @@
 
 namespace nVerliHub {
 	using namespace nUtils;
-	using namespace nEnums;
+//	using namespace nEnums;
 	using namespace nThread;
 	using namespace nTables;
-	namespace nSocket {
+
+namespace nSocket {
 		cServerDC* cServerDC::sCurrentServer = NULL;
 		bool cServerDC::mStackTrace = true;
 
@@ -96,7 +101,7 @@ cServerDC::cServerDC(string CfgBase, const string &ExecPath):
 	mUserList.mInfoListCB = &mCallBacks.mNickListInfos;
 	mOpList.mNickListCB = &mCallBacks.mOpListNicks;
 
-	if (mDBConf.locale.size()) {
+	if (!mDBConf.locale.empty()) {
 		vhLog(1) << "Found locale configuration: " << mDBConf.locale << endl;
 		vhLog(1) << "Setting environment variable LANG: " << ((setenv("LANG", mDBConf.locale.c_str(), 1) == 0) ? "OK" : "Error") << endl;
 		vhLog(1) << "Unsetting environment variable LANGUAGE: " << ((unsetenv("LANGUAGE") == 0) ? "OK" : "Error") << endl;
@@ -185,7 +190,7 @@ cServerDC::cServerDC(string CfgBase, const string &ExecPath):
 	else if (mC.hub_security == mC.opchat_name)
 		SetConfig(mDBConf.config_name.c_str(), "opchat_name", "", val_new, val_old);
 
-	if (mC.opchat_name.size()) {
+	if (!mC.opchat_name.empty()) {
 		mOpChat = new cOpChat(mC.opchat_name, this);
 		mOpChat->mClass = tUserCl(10);
 		mP.Create_MyINFO(mOpChat->mMyINFO, mOpChat->mNick, mC.opchat_desc, speed, mail, share);
@@ -260,7 +265,7 @@ cServerDC::~cServerDC()
 			this->RemoveNick(user);
 	}
 
-	for (tTFIt i = mTmpFunc.begin(); i != mTmpFunc.end(); i++) { // destruct the lists of pointers
+	for (tTFIt i = mTmpFunc.begin(); i != mTmpFunc.end(); ++i) { // destruct the lists of pointers
 		if (*i)
 			delete *i;
 	}
@@ -398,7 +403,7 @@ tMsgAct cServerDC::Filter(tDCMsg msg, cConnDC *conn)
 int cServerDC::DCPublic(const string &from, const string &txt, cConnDC *conn)
 {
 	if (conn) {
-		if (txt.size()) {
+		if (!txt.empty()) {
 			string msg;
 			mP.Create_Chat(msg, from, txt);
 			conn->Send(msg, true);
@@ -594,7 +599,7 @@ bool cServerDC::AddScriptCommand(string *cmd, string *data, string *plug, string
 
 void cServerDC::SendScriptCommands()
 {
-	if (!mScriptCommands.size())
+	if (mScriptCommands.empty())
 		return;
 
 	tScriptCommands::iterator it;

@@ -143,7 +143,7 @@ cAsyncConn::cAsyncConn(int desc, cAsyncSocketServer *s, tConnType ct, bool tIPv6
 			inet_ntop(mIPv6 ? AF_UNSPEC : AF_INET,&((struct sockaddr_in*)&saddr)->sin_addr,mTmp,sizeof(mTmp));
 			if(mTmp) {
 				mServAddr = strdup(mTmp);
-				free(mTmp);
+				delete [] mTmp;
 				LogStream() << "freeing tmp of mServAddrs" << endl; //probaly not need later?
 			}
 			
@@ -591,7 +591,7 @@ tSocket cAsyncConn::NonBlockSock(int sock)
 		return INVALID_SOCKET;
 	return sock;
 }
-//true if fail
+
 int cAsyncConn::ListenOnPort(unsigned int port, char *address, bool udp,bool ipv6)
 {
 	if(!(mSockDesc >= 0))
@@ -952,7 +952,7 @@ bool cAsyncConn::DNSResolveReverse(const string &ip, string &host)
 	if(!inet_aton(ip.c_str(), &addr))
 		return false;
 	if((hp = gethostbyaddr((char *)&addr,sizeof(addr),AF_UNSPEC)))
-		host=hp->h_name;
+		host = hp->h_name;
 	return hp != NULL;
 }
 
@@ -968,7 +968,10 @@ string cAsyncConn::IPAsString(unsigned long addr)
 
 cAsyncConn * cConnFactory::CreateConn(tSocket sd)
 {
-	cAsyncConn *conn = new cAsyncConn(sd);
+	cAsyncConn *conn = new(std::nothrow)cAsyncConn(sd);
+	if(!conn)
+		return NULL;
+
 	conn->mxMyFactory = this;
 	return conn;
 }

@@ -110,7 +110,7 @@ int cRegList::ShowUsers(cConnDC *op, ostringstream &os, int cls)
 		while( (row = mQuery.Row())) {
 				usr = mS->mUserList.GetUserByNick(row[0]);
 				os << " " << row[0];
-				if (usr && usr->mxConn) os << " [" << _("On") << "]";
+				if (usr && usr->mxConn->getok()) os << " [" << _("Online") << "]";
 				os << "\r\n";
 		}
 

@@ -355,7 +355,7 @@ namespace nVerliHub {
 				* @param level The log level of the event.
 				* @return 1 if message is logged or 0 otherwise.
 				*/
-				virtual int StrLog(ostream &ostr, int level);
+				virtual bool StrLog(ostream &ostr, int level);
 
 				/// Pointer to cUser instance.
 				cUser * mpUser;

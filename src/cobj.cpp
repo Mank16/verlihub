@@ -22,6 +22,7 @@
 #include "clog.h"
 #include "ctime.h"
 #include <iostream>
+
 using namespace std;
 
 #ifndef left
@@ -32,6 +33,7 @@ using namespace std;
 #endif
 
 namespace nVerliHub {
+	
 	int cObj::msLogLevel = 4;
 #ifdef ENABLE_SYSLOG
 	bool cObj::msUseSyslog = 0;
@@ -57,7 +59,7 @@ cObj::~cObj()
 }
 
 /** log something into a given stream */
-int cObj::StrLog(ostream &ostr, int level)
+bool cObj::StrLog(ostream &ostr, int level)
 {
 	if(level <= msLogLevel)
 	{
@@ -72,19 +74,16 @@ int cObj::StrLog(ostream &ostr, int level)
 		{
 			cTime now;
 			ostr << " (" << level << ") ";
-			if(1)
-			{
-				ostr.width(26);
-				ostr << left << now.AsDate() << " # ";
-			}
+			ostr.width(26);
+			ostr << left << now.AsDate() << " # ";
 			ostr.width(15);
 			ostr << right << mClassName;
 			ostr.width(0);
 			ostr << left << " - " ;
 		}
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 int cObj::Log(int level)

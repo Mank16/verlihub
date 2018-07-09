@@ -34,7 +34,7 @@ namespace nVerliHub {
 class cConfigFile : public cConfigBase
 {
 public:
-	cConfigFile(const string &file, bool load=true);
+	cConfigFile(const string &file, bool load = true);
 	/** The config load function - from a file */
 	int Load();
 	~cConfigFile();
